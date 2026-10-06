@@ -7,6 +7,7 @@ date pairs, which is the only way the resulting comparison means anything.
 
 from __future__ import annotations
 
+import calendar
 from datetime import date, timedelta
 
 from .scanner import Window
@@ -38,6 +39,41 @@ def christmas(year: int | None = None, today: date | None = None) -> list[Window
 def new_year(year: int | None = None, today: date | None = None) -> list[Window]:
     year = year or _next_christmas(today)
     return [Window(date(year, 12, 28), date(year + 1, 1, 6), name="new-year")]
+
+def monthly(
+    *,
+    start: date | None = None,
+    months: int = 12,
+    nights: int = 7,
+    day: int = 15,
+    today: date | None = None,
+) -> list[Window]:
+    """One fixed-length trip per month, to expose a route's seasonality.
+
+    Answers "when is this cheap" rather than "where is cheap". Trip length is held
+    constant and departures are pinned to the same day of each month (the 15th by
+    default -- mid-month, so the probe is not sitting inside school holidays) so
+    that month-to-month differences are the route's own seasonality and not an
+    artefact of the dates drifting.
+
+    Months begin with the next whole month, since a departure a few weeks out is
+    priced as last-minute and would not compare fairly against one a year ahead.
+    """
+    today = today or date.today()
+    if start is None:
+        year, month = (today.year, today.month + 1) if today.month < 12 else (today.year + 1, 1)
+        start = date(year, month, 1)
+
+    windows: list[Window] = []
+    year, month = start.year, start.month
+    for _ in range(months):
+        depart = date(year, month, min(day, calendar.monthrange(year, month)[1]))
+        windows.append(
+            Window(depart, depart + timedelta(days=nights), name=f"{year}-{month:02d}")
+        )
+        year, month = (year, month + 1) if month < 12 else (year + 1, 1)
+    return windows
+
 
 def around(depart: date, ret: date | None, *, flex_days: int = 0, step: int = 1) -> list[Window]:
     """A window plus its neighbours, keeping the trip length fixed."""

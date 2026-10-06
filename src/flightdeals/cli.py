@@ -39,13 +39,23 @@ def build_parser() -> argparse.ArgumentParser:
     scan_p.add_argument(
         "--window",
         default="christmas",
-        help="preset name (christmas, new-year) or 'custom' with --depart/--return",
+        help="preset name (christmas, new-year), 'monthly' for a seasonality "
+        "sweep, or 'custom' with --depart/--return",
     )
     scan_p.add_argument("--year", type=int, help="year for a seasonal preset")
     scan_p.add_argument("--depart", type=_parse_date, help="custom departure date")
     scan_p.add_argument("--return", dest="ret", type=_parse_date, help="custom return date")
     scan_p.add_argument(
         "--flex", type=int, default=0, help="with --depart, also try +/- N days (fixed length)"
+    )
+    scan_p.add_argument(
+        "--months", type=int, default=12, help="with --window monthly: how many months"
+    )
+    scan_p.add_argument(
+        "--nights", type=int, default=7, help="with --window monthly: trip length"
+    )
+    scan_p.add_argument(
+        "--day", type=int, default=15, help="with --window monthly: day of month to depart"
     )
     scan_p.add_argument("--dest", type=_csv_list, help="explicit destinations, comma separated")
     scan_p.add_argument("--region", type=_csv_list, help="limit to these catalogue regions")
@@ -103,6 +113,8 @@ def _windows_from_args(args) -> list[Window]:
         if args.flex:
             return windows.around(args.depart, ret, flex_days=args.flex)
         return [Window(args.depart, ret, name="custom")]
+    if args.window == "monthly":
+        return windows.monthly(months=args.months, nights=args.nights, day=args.day)
     if args.window == "custom":
         raise SystemExit("--window custom needs --depart (and usually --return)")
     picked = windows.preset(args.window, args.year)
@@ -173,10 +185,15 @@ def cmd_scan(args) -> int:
         if history is not None:
             history.close()
 
-    for window in window_list:
-        deals = result.deals_by_window.get(window.label, [])
-        if deals:
-            report.print_table(deals, title=window.describe(), limit=args.limit)
+    if len(window_list) > 1 and len(destinations) <= 12:
+        # Many windows, few destinations: the question is "when", so pivot to a
+        # window-by-destination matrix instead of printing a table per window.
+        report.print_matrix(result)
+    else:
+        for window in window_list:
+            deals = result.deals_by_window.get(window.label, [])
+            if deals:
+                report.print_table(deals, title=window.describe(), limit=args.limit)
 
     written = report.write_all(result, args.out)
     print("\nWrote:", file=sys.stderr)

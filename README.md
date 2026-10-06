@@ -46,6 +46,9 @@ flightdeals scan --origin SYD --region "East Asia" --all --max-stops 0
 # Your own dates, plus/minus three days at the same trip length
 flightdeals scan --depart 2027-04-02 --return 2027-04-14 --flex 3
 
+# When is this route cheap? One fixed-length trip per month for a year
+flightdeals scan --dest LDH --window monthly --months 12 --nights 7
+
 # What's in the catalogue, and how far away is it
 flightdeals destinations --origin BNE --region Europe
 
@@ -60,11 +63,17 @@ Every scan writes `out/<origin>-<timestamp>.{json,md,html,csv}`. The HTML file i
 a standalone report with no external assets; the CSV is one wide row per
 destination, ready to pivot.
 
+A scan with more than one window also writes `-matrix.csv`: one row per window,
+one column per destination, one price per cell. That is the right shape for
+"when is this cheap" — with `--window monthly` and a handful of destinations the
+terminal switches to the same pivoted view automatically.
+
 ### Useful flags
 
 | Flag | Why |
 |---|---|
 | `--window christmas` \| `new-year` | Seasonal presets; `--year` to pick the year |
+| `--window monthly` | Seasonality sweep: `--months`, `--nights`, `--day` |
 | `--depart` / `--return` / `--flex N` | Custom dates, optionally swept ±N days |
 | `--region`, `--dest`, `--exclude`, `--all` | Scope the destination list |
 | `--seat`, `--adults`, `--children`, `--currency` | Search parameters |
@@ -88,6 +97,10 @@ Each quote gets three 0–100 component scores, blended 45 / 35 / 20:
 
 Windows are scored independently — a 7-night trip is never ranked against a
 15-night one.
+
+For a seasonality sweep the score is beside the point: comparing one destination
+against itself across twelve months is a question about the price column, which
+is why `--window monthly` pivots to the matrix instead.
 
 ## Architecture
 

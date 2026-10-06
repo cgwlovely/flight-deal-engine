@@ -77,3 +77,67 @@ def test_markdown_lists_unpriced_routes(tmp_path):
     md = written["markdown"].read_text()
     assert "## Not priced" in md
     assert "BNE-ZZZ" in md
+
+
+class SeasonalProvider:
+    """Cheap in April, dear in December, and not flying at all in February."""
+
+    name = "fake"
+
+    def search(self, request):
+        month = request.depart_date.month
+        if month == 2:
+            raise NoFlightsFound("seasonal route, not operating")
+        price = {4: 600}.get(month, 1800 if month == 12 else 1000)
+        return [
+            Itinerary(
+                origin=request.origin,
+                destination=request.destination,
+                depart_date=request.depart_date,
+                return_date=request.return_date,
+                price=price if request.destination == "LDH" else price * 2,
+                currency="AUD",
+                airlines=["QantasLink"],
+                legs=[Leg(request.origin, request.destination, None, None, 120)],
+                source="fake",
+            )
+        ]
+
+
+def seasonal_result():
+    from flightdeals import windows
+
+    return scan(
+        ScanSpec(
+            origin="BNE",
+            destinations=["LDH", "NAN"],
+            windows=windows.monthly(months=12, nights=7, today=date(2026, 10, 6)),
+        ),
+        SeasonalProvider(),
+        workers=4,
+        limiter=RateLimiter(min_interval=0, jitter=0),
+    )
+
+
+def test_matrix_is_rectangular_with_a_row_per_window():
+    codes, rows = report.matrix_rows(seasonal_result())
+    assert codes == ["LDH", "NAN"]  # ordered by median price, cheapest first
+    assert len(rows) == 12
+    assert len({tuple(r.keys()) for r in rows}) == 1, "every row has the same columns"
+
+
+def test_matrix_marks_the_cheapest_month_and_blanks_unflown_ones():
+    _, rows = report.matrix_rows(seasonal_result())
+    by_month = {r["window"]: r for r in rows}
+    assert by_month["2027-04"]["LDH"] == 600
+    assert by_month["2026-12"]["LDH"] == 1800
+    assert by_month["2027-02"]["LDH"] == "", "no flights leaves the cell empty, not zero"
+    assert by_month["2027-04"]["cheapest"] == "LDH"
+
+
+def test_matrix_csv_is_written_for_multi_window_scans(tmp_path):
+    written = report.write_all(seasonal_result(), tmp_path, stamp="fixed")
+    assert "matrix" in written
+    rows = list(csv.DictReader(written["matrix"].open()))
+    assert rows[0]["window"] == "2026-11"
+    assert "LDH" in rows[0] and "NAN" in rows[0]

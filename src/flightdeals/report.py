@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import html
 import json
+import statistics
 from datetime import datetime
 from pathlib import Path
 
@@ -64,6 +65,100 @@ def _rows(deals: list[Deal]) -> list[dict]:
             }
         )
     return rows
+
+
+# -- window x destination matrix -------------------------------------------
+def matrix_rows(result: ScanResult) -> tuple[list[str], list[dict]]:
+    """Pivot a scan into one row per window and one column per destination.
+
+    When a scan holds many windows and few destinations the interesting question
+    is "when", not "where", and a table per window buries it. This is the wide,
+    rectangular form of the same data: one price per cell, ready to pivot or chart.
+    """
+    prices: dict[str, dict[str, float]] = {}
+    for window in result.spec.windows:
+        for deal in result.deals_by_window.get(window.label, []):
+            prices.setdefault(window.label, {})[deal.itinerary.destination] = (
+                deal.itinerary.price
+            )
+
+    # Columns ordered by each destination's median across the scan: cheapest first.
+    seen: dict[str, list[float]] = {}
+    for row in prices.values():
+        for code, price in row.items():
+            seen.setdefault(code, []).append(price)
+    codes = sorted(seen, key=lambda c: statistics.median(seen[c]))
+
+    rows: list[dict] = []
+    for window in result.spec.windows:
+        cells = prices.get(window.label, {})
+        row: dict = {
+            "window": window.name or window.label,
+            "depart": window.depart.isoformat(),
+            "return": window.ret.isoformat() if window.ret else "",
+            "nights": window.nights or "",
+        }
+        for code in codes:
+            row[code] = round(cells[code]) if code in cells else ""
+        if cells:
+            best = min(cells, key=lambda c: cells[c])
+            row["cheapest"] = best
+            row["cheapest_price"] = round(cells[best])
+        else:
+            row["cheapest"] = row["cheapest_price"] = ""
+        rows.append(row)
+    return codes, rows
+
+
+def write_matrix_csv(result: ScanResult, path: Path) -> Path:
+    _, rows = matrix_rows(result)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()) if rows else ["window"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+def print_matrix(result: ScanResult, *, max_cols: int = 14) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
+    codes, rows = matrix_rows(result)
+    shown = codes[:max_cols]
+    cur = result.spec.currency
+    nights = {w.nights for w in result.spec.windows}
+    length = f"{nights.pop()}n" if len(nights) == 1 else "mixed length"
+
+    table = Table(
+        title=f"{result.spec.origin} -> {len(codes)} destination(s), {length}, {cur}",
+        header_style="bold",
+    )
+    table.add_column("Window", no_wrap=True)
+    for code in shown:
+        table.add_column(code, justify="right", no_wrap=True)
+    table.add_column("Cheapest", no_wrap=True)
+
+    # Highlight each destination's own best month rather than the row minimum,
+    # which would only ever mark the nearest airport.
+    best_per_code = {
+        code: min((r[code] for r in rows if r.get(code) != ""), default=None) for code in shown
+    }
+    for row in rows:
+        cells = []
+        for code in shown:
+            value = row.get(code, "")
+            if value == "":
+                cells.append("[dim]-[/dim]")
+            elif value == best_per_code[code]:
+                cells.append(f"[bold green]{value:,}[/bold green]")
+            else:
+                cells.append(f"{value:,}")
+        best = f"{row['cheapest']} {row['cheapest_price']:,}" if row["cheapest"] else "-"
+        table.add_row(row["window"], *cells, best)
+    Console().print(table)
+    if len(codes) > max_cols:
+        print(f"({len(codes) - max_cols} more destination(s) in the CSV)")
 
 
 # -- terminal ---------------------------------------------------------------
@@ -302,4 +397,6 @@ def write_all(result: ScanResult, out_dir: Path, *, stamp: str | None = None) ->
     best = result.best_per_destination()
     if best:
         written["csv"] = write_csv(best, base.with_suffix(".csv"))
+    if len(result.spec.windows) > 1:
+        written["matrix"] = write_matrix_csv(result, base.with_name(base.name + "-matrix.csv"))
     return written
