@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv pip install --system -e ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Test
+        # The suite is hermetic: the Google Flights parser runs against synthetic
+        # payloads, so CI never makes a network request.
+        run: pytest -q

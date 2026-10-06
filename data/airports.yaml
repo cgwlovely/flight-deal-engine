@@ -1,0 +1,142 @@
+# Destination catalogue. Coordinates are airport-or-city level (good to ~1 km),
+# used only for great-circle distance so that price can be normalised per km.
+#
+# tier: 1 = included in a default scan, 2 = only with --all / explicit --dest.
+airports:
+  # --- Australia -------------------------------------------------------------
+  - {code: BNE, name: Brisbane,       country: Australia,   region: Australia, lat: -27.384, lon: 153.117, tier: 1}
+  - {code: SYD, name: Sydney,         country: Australia,   region: Australia, lat: -33.946, lon: 151.177, tier: 1}
+  - {code: MEL, name: Melbourne,      country: Australia,   region: Australia, lat: -37.669, lon: 144.841, tier: 1}
+  - {code: PER, name: Perth,          country: Australia,   region: Australia, lat: -31.940, lon: 115.967, tier: 1}
+  - {code: ADL, name: Adelaide,       country: Australia,   region: Australia, lat: -34.945, lon: 138.531, tier: 1}
+  - {code: HBA, name: Hobart,         country: Australia,   region: Australia, lat: -42.836, lon: 147.510, tier: 1}
+  - {code: CNS, name: Cairns,         country: Australia,   region: Australia, lat: -16.886, lon: 145.755, tier: 1}
+  - {code: DRW, name: Darwin,         country: Australia,   region: Australia, lat: -12.415, lon: 130.887, tier: 1}
+  - {code: OOL, name: Gold Coast,     country: Australia,   region: Australia, lat: -28.164, lon: 153.505, tier: 2}
+  - {code: CBR, name: Canberra,       country: Australia,   region: Australia, lat: -35.307, lon: 149.195, tier: 2}
+  - {code: TSV, name: Townsville,     country: Australia,   region: Australia, lat: -19.253, lon: 146.765, tier: 2}
+  - {code: ASP, name: Alice Springs,  country: Australia,   region: Australia, lat: -23.807, lon: 133.902, tier: 2}
+  # --- New Zealand -----------------------------------------------------------
+  - {code: AKL, name: Auckland,       country: New Zealand, region: New Zealand, lat: -37.008, lon: 174.792, tier: 1}
+  - {code: CHC, name: Christchurch,   country: New Zealand, region: New Zealand, lat: -43.489, lon: 172.532, tier: 1}
+  - {code: ZQN, name: Queenstown,     country: New Zealand, region: New Zealand, lat: -45.021, lon: 168.739, tier: 1}
+  - {code: WLG, name: Wellington,     country: New Zealand, region: New Zealand, lat: -41.327, lon: 174.805, tier: 2}
+  # --- Pacific ---------------------------------------------------------------
+  - {code: NAN, name: Nadi,           country: Fiji,        region: Pacific, lat: -17.755, lon: 177.443, tier: 1}
+  - {code: VLI, name: Port Vila,      country: Vanuatu,     region: Pacific, lat: -17.699, lon: 168.320, tier: 1}
+  - {code: NOU, name: Noumea,         country: New Caledonia, region: Pacific, lat: -22.015, lon: 166.213, tier: 1}
+  - {code: APW, name: Apia,           country: Samoa,       region: Pacific, lat: -13.830, lon: -172.008, tier: 1}
+  - {code: RAR, name: Rarotonga,      country: Cook Islands, region: Pacific, lat: -21.203, lon: -159.796, tier: 1}
+  - {code: TBU, name: Nuku'alofa,     country: Tonga,       region: Pacific, lat: -21.241, lon: -175.150, tier: 1}
+  - {code: POM, name: Port Moresby,   country: Papua New Guinea, region: Pacific, lat: -9.443, lon: 147.220, tier: 1}
+  - {code: PPT, name: Papeete,        country: French Polynesia, region: Pacific, lat: -17.557, lon: -149.612, tier: 1}
+  - {code: HIR, name: Honiara,        country: Solomon Islands, region: Pacific, lat: -9.428, lon: 160.055, tier: 2}
+  - {code: GUM, name: Guam,           country: Guam,        region: Pacific, lat: 13.484, lon: 144.797, tier: 2}
+  # --- Southeast Asia --------------------------------------------------------
+  - {code: DPS, name: Bali (Denpasar), country: Indonesia,  region: Southeast Asia, lat: -8.748, lon: 115.167, tier: 1}
+  - {code: SIN, name: Singapore,      country: Singapore,   region: Southeast Asia, lat: 1.364, lon: 103.991, tier: 1}
+  - {code: KUL, name: Kuala Lumpur,   country: Malaysia,    region: Southeast Asia, lat: 2.746, lon: 101.710, tier: 1}
+  - {code: BKK, name: Bangkok,        country: Thailand,    region: Southeast Asia, lat: 13.690, lon: 100.750, tier: 1}
+  - {code: HKT, name: Phuket,         country: Thailand,    region: Southeast Asia, lat: 8.113, lon: 98.317, tier: 1}
+  - {code: CNX, name: Chiang Mai,     country: Thailand,    region: Southeast Asia, lat: 18.767, lon: 98.963, tier: 1}
+  - {code: SGN, name: Ho Chi Minh City, country: Vietnam,   region: Southeast Asia, lat: 10.819, lon: 106.652, tier: 1}
+  - {code: HAN, name: Hanoi,          country: Vietnam,     region: Southeast Asia, lat: 21.221, lon: 105.807, tier: 1}
+  - {code: DAD, name: Da Nang,        country: Vietnam,     region: Southeast Asia, lat: 16.044, lon: 108.199, tier: 1}
+  - {code: MNL, name: Manila,         country: Philippines, region: Southeast Asia, lat: 14.509, lon: 121.020, tier: 1}
+  - {code: CEB, name: Cebu,           country: Philippines, region: Southeast Asia, lat: 10.307, lon: 123.979, tier: 1}
+  - {code: PNH, name: Phnom Penh,     country: Cambodia,    region: Southeast Asia, lat: 11.546, lon: 104.844, tier: 1}
+  - {code: REP, name: Siem Reap,      country: Cambodia,    region: Southeast Asia, lat: 13.411, lon: 103.813, tier: 1}
+  - {code: CGK, name: Jakarta,        country: Indonesia,   region: Southeast Asia, lat: -6.126, lon: 106.656, tier: 1}
+  - {code: RGN, name: Yangon,         country: Myanmar,     region: Southeast Asia, lat: 16.907, lon: 96.133, tier: 2}
+  - {code: VTE, name: Vientiane,      country: Laos,        region: Southeast Asia, lat: 17.988, lon: 102.563, tier: 2}
+  - {code: SUB, name: Surabaya,       country: Indonesia,   region: Southeast Asia, lat: -7.380, lon: 112.787, tier: 2}
+  - {code: BWN, name: Bandar Seri Begawan, country: Brunei, region: Southeast Asia, lat: 4.944, lon: 114.928, tier: 2}
+  # --- East Asia -------------------------------------------------------------
+  - {code: HKG, name: Hong Kong,      country: Hong Kong,   region: East Asia, lat: 22.308, lon: 113.915, tier: 1}
+  - {code: TPE, name: Taipei,         country: Taiwan,      region: East Asia, lat: 25.077, lon: 121.233, tier: 1}
+  - {code: NRT, name: Tokyo Narita,   country: Japan,       region: East Asia, lat: 35.765, lon: 140.386, tier: 1}
+  - {code: HND, name: Tokyo Haneda,   country: Japan,       region: East Asia, lat: 35.549, lon: 139.780, tier: 1}
+  - {code: KIX, name: Osaka,          country: Japan,       region: East Asia, lat: 34.434, lon: 135.233, tier: 1}
+  - {code: CTS, name: Sapporo,        country: Japan,       region: East Asia, lat: 42.775, lon: 141.692, tier: 1}
+  - {code: FUK, name: Fukuoka,        country: Japan,       region: East Asia, lat: 33.586, lon: 130.451, tier: 2}
+  - {code: OKA, name: Okinawa,        country: Japan,       region: East Asia, lat: 26.196, lon: 127.646, tier: 2}
+  - {code: ICN, name: Seoul,          country: South Korea, region: East Asia, lat: 37.460, lon: 126.441, tier: 1}
+  - {code: PVG, name: Shanghai,       country: China,       region: East Asia, lat: 31.143, lon: 121.805, tier: 1}
+  - {code: PEK, name: Beijing,        country: China,       region: East Asia, lat: 40.080, lon: 116.585, tier: 1}
+  - {code: CAN, name: Guangzhou,      country: China,       region: East Asia, lat: 23.392, lon: 113.299, tier: 1}
+  - {code: CTU, name: Chengdu,        country: China,       region: East Asia, lat: 30.579, lon: 103.947, tier: 1}
+  - {code: SZX, name: Shenzhen,       country: China,       region: East Asia, lat: 22.639, lon: 113.811, tier: 2}
+  - {code: HGH, name: Hangzhou,       country: China,       region: East Asia, lat: 30.230, lon: 120.434, tier: 2}
+  - {code: XMN, name: Xiamen,         country: China,       region: East Asia, lat: 24.544, lon: 118.128, tier: 2}
+  - {code: PUS, name: Busan,          country: South Korea, region: East Asia, lat: 35.180, lon: 128.938, tier: 2}
+  # --- South Asia ------------------------------------------------------------
+  - {code: DEL, name: Delhi,          country: India,       region: South Asia, lat: 28.556, lon: 77.100, tier: 1}
+  - {code: BOM, name: Mumbai,         country: India,       region: South Asia, lat: 19.089, lon: 72.868, tier: 1}
+  - {code: BLR, name: Bengaluru,      country: India,       region: South Asia, lat: 13.199, lon: 77.710, tier: 1}
+  - {code: MAA, name: Chennai,        country: India,       region: South Asia, lat: 12.990, lon: 80.169, tier: 2}
+  - {code: CMB, name: Colombo,        country: Sri Lanka,   region: South Asia, lat: 7.181, lon: 79.884, tier: 1}
+  - {code: KTM, name: Kathmandu,      country: Nepal,       region: South Asia, lat: 27.697, lon: 85.359, tier: 1}
+  - {code: MLE, name: Male (Maldives), country: Maldives,   region: South Asia, lat: 4.192, lon: 73.529, tier: 1}
+  - {code: DAC, name: Dhaka,          country: Bangladesh,  region: South Asia, lat: 23.844, lon: 90.398, tier: 2}
+  # --- Middle East -----------------------------------------------------------
+  - {code: DXB, name: Dubai,          country: UAE,         region: Middle East, lat: 25.253, lon: 55.365, tier: 1}
+  - {code: DOH, name: Doha,           country: Qatar,       region: Middle East, lat: 25.261, lon: 51.565, tier: 1}
+  - {code: AUH, name: Abu Dhabi,      country: UAE,         region: Middle East, lat: 24.433, lon: 54.651, tier: 1}
+  - {code: IST, name: Istanbul,       country: Turkey,      region: Middle East, lat: 41.262, lon: 28.742, tier: 1}
+  - {code: TLV, name: Tel Aviv,       country: Israel,      region: Middle East, lat: 32.011, lon: 34.887, tier: 2}
+  - {code: RUH, name: Riyadh,         country: Saudi Arabia, region: Middle East, lat: 24.958, lon: 46.699, tier: 2}
+  # --- Europe ----------------------------------------------------------------
+  - {code: LHR, name: London Heathrow, country: UK,         region: Europe, lat: 51.470, lon: -0.454, tier: 1}
+  - {code: MAN, name: Manchester,     country: UK,          region: Europe, lat: 53.354, lon: -2.275, tier: 2}
+  - {code: EDI, name: Edinburgh,      country: UK,          region: Europe, lat: 55.950, lon: -3.372, tier: 2}
+  - {code: DUB, name: Dublin,         country: Ireland,     region: Europe, lat: 53.427, lon: -6.250, tier: 2}
+  - {code: CDG, name: Paris,          country: France,      region: Europe, lat: 49.010, lon: 2.548, tier: 1}
+  - {code: FRA, name: Frankfurt,      country: Germany,     region: Europe, lat: 50.037, lon: 8.562, tier: 1}
+  - {code: MUC, name: Munich,         country: Germany,     region: Europe, lat: 48.354, lon: 11.786, tier: 2}
+  - {code: BER, name: Berlin,         country: Germany,     region: Europe, lat: 52.362, lon: 13.501, tier: 2}
+  - {code: AMS, name: Amsterdam,      country: Netherlands, region: Europe, lat: 52.311, lon: 4.764, tier: 1}
+  - {code: FCO, name: Rome,           country: Italy,       region: Europe, lat: 41.800, lon: 12.239, tier: 1}
+  - {code: MXP, name: Milan,          country: Italy,       region: Europe, lat: 45.630, lon: 8.723, tier: 2}
+  - {code: BCN, name: Barcelona,      country: Spain,       region: Europe, lat: 41.297, lon: 2.078, tier: 1}
+  - {code: MAD, name: Madrid,         country: Spain,       region: Europe, lat: 40.472, lon: -3.561, tier: 2}
+  - {code: LIS, name: Lisbon,         country: Portugal,    region: Europe, lat: 38.774, lon: -9.134, tier: 1}
+  - {code: ATH, name: Athens,         country: Greece,      region: Europe, lat: 37.937, lon: 23.945, tier: 1}
+  - {code: ZRH, name: Zurich,         country: Switzerland, region: Europe, lat: 47.459, lon: 8.548, tier: 2}
+  - {code: VIE, name: Vienna,         country: Austria,     region: Europe, lat: 48.110, lon: 16.570, tier: 1}
+  - {code: CPH, name: Copenhagen,     country: Denmark,     region: Europe, lat: 55.618, lon: 12.656, tier: 1}
+  - {code: ARN, name: Stockholm,      country: Sweden,      region: Europe, lat: 59.650, lon: 17.923, tier: 2}
+  - {code: OSL, name: Oslo,           country: Norway,      region: Europe, lat: 60.197, lon: 11.100, tier: 2}
+  - {code: HEL, name: Helsinki,       country: Finland,     region: Europe, lat: 60.317, lon: 24.963, tier: 2}
+  - {code: PRG, name: Prague,         country: Czechia,     region: Europe, lat: 50.100, lon: 14.260, tier: 2}
+  - {code: BUD, name: Budapest,       country: Hungary,     region: Europe, lat: 47.437, lon: 19.262, tier: 2}
+  - {code: WAW, name: Warsaw,         country: Poland,      region: Europe, lat: 52.166, lon: 20.967, tier: 2}
+  # --- North America ---------------------------------------------------------
+  - {code: LAX, name: Los Angeles,    country: USA,         region: North America, lat: 33.942, lon: -118.408, tier: 1}
+  - {code: SFO, name: San Francisco,  country: USA,         region: North America, lat: 37.619, lon: -122.375, tier: 1}
+  - {code: SEA, name: Seattle,        country: USA,         region: North America, lat: 47.450, lon: -122.309, tier: 2}
+  - {code: LAS, name: Las Vegas,      country: USA,         region: North America, lat: 36.084, lon: -115.154, tier: 2}
+  - {code: SAN, name: San Diego,      country: USA,         region: North America, lat: 32.734, lon: -117.190, tier: 2}
+  - {code: DEN, name: Denver,         country: USA,         region: North America, lat: 39.862, lon: -104.673, tier: 2}
+  - {code: DFW, name: Dallas,         country: USA,         region: North America, lat: 32.897, lon: -97.038, tier: 2}
+  - {code: ORD, name: Chicago,        country: USA,         region: North America, lat: 41.978, lon: -87.905, tier: 1}
+  - {code: JFK, name: New York,       country: USA,         region: North America, lat: 40.640, lon: -73.779, tier: 1}
+  - {code: HNL, name: Honolulu,       country: USA,         region: North America, lat: 21.319, lon: -157.922, tier: 1}
+  - {code: YVR, name: Vancouver,      country: Canada,      region: North America, lat: 49.195, lon: -123.180, tier: 1}
+  - {code: YYZ, name: Toronto,        country: Canada,      region: North America, lat: 43.677, lon: -79.631, tier: 2}
+  - {code: YYC, name: Calgary,        country: Canada,      region: North America, lat: 51.114, lon: -114.020, tier: 2}
+  - {code: MEX, name: Mexico City,    country: Mexico,      region: North America, lat: 19.436, lon: -99.072, tier: 1}
+  - {code: CUN, name: Cancun,         country: Mexico,      region: North America, lat: 21.037, lon: -86.877, tier: 2}
+  # --- South America ---------------------------------------------------------
+  - {code: SCL, name: Santiago,       country: Chile,       region: South America, lat: -33.393, lon: -70.786, tier: 1}
+  - {code: GRU, name: Sao Paulo,      country: Brazil,      region: South America, lat: -23.432, lon: -46.470, tier: 1}
+  - {code: EZE, name: Buenos Aires,   country: Argentina,   region: South America, lat: -34.822, lon: -58.536, tier: 1}
+  - {code: LIM, name: Lima,           country: Peru,        region: South America, lat: -12.022, lon: -77.114, tier: 1}
+  - {code: BOG, name: Bogota,         country: Colombia,    region: South America, lat: 4.702, lon: -74.146, tier: 2}
+  # --- Africa ----------------------------------------------------------------
+  - {code: JNB, name: Johannesburg,   country: South Africa, region: Africa, lat: -26.139, lon: 28.246, tier: 1}
+  - {code: CPT, name: Cape Town,      country: South Africa, region: Africa, lat: -33.969, lon: 18.602, tier: 1}
+  - {code: MRU, name: Mauritius,      country: Mauritius,   region: Africa, lat: -20.430, lon: 57.683, tier: 1}
+  - {code: SEZ, name: Seychelles,     country: Seychelles,  region: Africa, lat: -4.674, lon: 55.522, tier: 2}
+  - {code: NBO, name: Nairobi,        country: Kenya,       region: Africa, lat: -1.319, lon: 36.928, tier: 1}
+  - {code: CAI, name: Cairo,          country: Egypt,       region: Africa, lat: 30.112, lon: 31.400, tier: 1}
+  - {code: ZNZ, name: Zanzibar,       country: Tanzania,    region: Africa, lat: -6.222, lon: 39.225, tier: 2}
