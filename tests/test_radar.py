@@ -148,3 +148,55 @@ def test_record_lows_sort_above_shallower_dips(tmp_path):
 
 def test_notify_is_a_no_op_for_an_empty_alert_list():
     assert radar.notify_macos([]) is False
+
+
+class InsightProvider(FixedProvider):
+    """A source that publishes its own verdict against years of history."""
+
+    def __init__(self, price, level, delta=None):
+        super().__init__(price)
+        self.level, self.delta = level, delta
+
+    def search_with_insight(self, request):
+        from flightdeals.models import PriceInsight
+
+        return self.search(request), PriceInsight(
+            level=self.level, delta_vs_usual=self.delta
+        )
+
+
+def run_insight(price, level, history, delta=None):
+    return scan(
+        ScanSpec(origin="BNE", destinations=["FCO"], windows=[WINDOW]),
+        InsightProvider(price, level, delta),
+        history=history,
+        limiter=NO_WAIT,
+    )
+
+
+def test_a_source_low_verdict_alerts_with_no_local_history_at_all(tmp_path):
+    with PriceHistory(tmp_path / "h.db") as h:
+        (finding,) = radar.detect(run_insight(1500, "low", h, delta=-94), h)
+        assert finding.kind == "source-low"
+        assert finding.is_alert
+        assert "low against this route's own history, 94 under" in finding.message()
+
+
+def test_a_seasonal_dip_the_source_calls_typical_is_not_an_alert(tmp_path):
+    """December being cheap every year is season, not a deal."""
+    with PriceHistory(tmp_path / "h.db") as h:
+        seed(h, [2000, 2000, 2000], dest="FCO")
+        (finding,) = radar.detect(run_insight(1000, "typical", h), h)
+        # The local fallback still fires — it is all this database knows — but it is
+        # not a "source-low", and the source's verdict stays on the record so the
+        # reader can see that the dip is seasonal rather than unusual.
+        assert finding.kind == "record-low"
+        assert finding.kind != "source-low"
+        assert finding.deal.quote.insight.level == "typical"
+
+
+def test_source_low_outranks_a_local_record_low(tmp_path):
+    with PriceHistory(tmp_path / "h.db") as h:
+        seed(h, [2000, 2000, 2000], dest="FCO")
+        (finding,) = radar.detect(run_insight(1000, "low", h, delta=-500), h)
+        assert finding.kind == "source-low"

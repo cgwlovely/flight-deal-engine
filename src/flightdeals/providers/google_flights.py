@@ -17,16 +17,28 @@ one day. `PAYLOAD_SECTIONS` is the single place to adjust if it does.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 
 from fast_flights import FlightQuery, Passengers, create_query, fetch_flights_html
 from selectolax.lexbor import LexborHTMLParser
 
-from ..models import Itinerary, Leg
+from ..models import Itinerary, Leg, PriceInsight
 from .base import NoFlightsFound, ProviderError, SearchRequest
 
 #: Indices of the itinerary lists inside the page payload: "other", then "best".
 PAYLOAD_SECTIONS = (2, 3)
+
+#: The price-level verdict is rendered, not in the JSON payload, but the icon it
+#: ships with names the level in its filename. That is language-independent, so it
+#: survives a change of `hl=` where the English sentence would not.
+LEVEL_ICON = re.compile(r"ic_price_(low|typical|high)[_\d]")
+
+#: "Prices are currently low — A$94 cheaper than usual for your search".
+USUAL_DELTA = re.compile(
+    r"(?:A\$|US\$|NZ\$|C\$|\$|€|£|¥)\s?([\d,]+)\s+(cheaper|more expensive|more)\s+than usual",
+    re.I,
+)
 
 
 def _extract_json(blob: str) -> str:
@@ -96,12 +108,36 @@ class GoogleFlightsProvider:
 
     # -- public API ---------------------------------------------------------
     def search(self, request: SearchRequest) -> list[Itinerary]:
+        return self.search_with_insight(request)[0]
+
+    def search_with_insight(
+        self, request: SearchRequest
+    ) -> tuple[list[Itinerary], PriceInsight | None]:
+        """Itineraries plus the source's own verdict on this fare against history."""
         query = self._query(request)
         try:
             html = fetch_flights_html(query, proxy=self.proxy)
         except Exception as exc:  # network / TLS / impersonation failures
             raise ProviderError(f"fetch failed for {request.label()}: {exc}") from exc
-        return self._parse(html, request)
+        return self._parse(html, request), self.read_insight(html, request.currency)
+
+    @staticmethod
+    def read_insight(html: str, currency: str = "") -> PriceInsight | None:
+        """Pull the price-level verdict and its margin out of the rendered page."""
+        match = LEVEL_ICON.search(html)
+        if match is None:
+            return None
+        level = match.group(1)
+
+        delta = None
+        note = ""
+        text = LexborHTMLParser(html).text()
+        found = USUAL_DELTA.search(text)
+        if found:
+            amount = float(found.group(1).replace(",", ""))
+            delta = -amount if found.group(2).lower() == "cheaper" else amount
+            note = found.group(0)
+        return PriceInsight(level=level, delta_vs_usual=delta, currency=currency, note=note)
 
     def search_url(self, request: SearchRequest) -> str:
         """A human-clickable link to the same search, for reports."""

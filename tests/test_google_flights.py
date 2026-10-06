@@ -199,3 +199,46 @@ def test_airline_filter_changes_the_query_and_is_absent_by_default():
     raw = base64.b64decode(unquote(filtered.split("tfs=")[1].split("&")[0]))
     assert b"CZ" in raw and b"MU" in raw
     assert b"CZ" not in base64.b64decode(unquote(base.split("tfs=")[1].split("&")[0]))
+
+
+# -- price insights ----------------------------------------------------------
+def insight_html(level, sentence=""):
+    return (
+        '<html><body><div style="--x: url(https://www.gstatic.com/flights/app/'
+        f'ic_price_{level}_3_32px.svg);"></div>'
+        f'<div>Prices are currently {level}{sentence}</div></body></html>'
+    )
+
+
+def test_level_is_read_from_the_icon_not_the_sentence():
+    """The icon filename survives a language change; the English sentence does not."""
+    for level in ("low", "typical", "high"):
+        got = GoogleFlightsProvider.read_insight(insight_html(level))
+        assert got.level == level
+    assert GoogleFlightsProvider.read_insight(insight_html("low")).is_bargain
+    assert not GoogleFlightsProvider.read_insight(insight_html("typical")).is_bargain
+
+
+def test_a_cheaper_than_usual_margin_is_signed_negative():
+    got = GoogleFlightsProvider.read_insight(
+        insight_html("low", " — A$94 cheaper than usual for your search"), currency="AUD"
+    )
+    assert got.level == "low"
+    assert got.delta_vs_usual == -94.0
+    assert got.currency == "AUD"
+
+
+def test_a_dearer_margin_is_signed_positive():
+    got = GoogleFlightsProvider.read_insight(
+        insight_html("high", " — $310 more than usual for your search")
+    )
+    assert got.delta_vs_usual == 310.0
+
+
+def test_a_level_without_a_margin_still_reports_the_level():
+    got = GoogleFlightsProvider.read_insight(insight_html("typical"))
+    assert got.level == "typical" and got.delta_vs_usual is None
+
+
+def test_a_page_without_insights_yields_none():
+    assert GoogleFlightsProvider.read_insight("<html><body>no panel</body></html>") is None

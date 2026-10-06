@@ -104,6 +104,29 @@ class Itinerary:
         )
 
 
+@dataclass(frozen=True)
+class PriceInsight:
+    """What the source's own price history says about this search.
+
+    This is the baseline a within-year scan cannot supply. Comparing December
+    against the rest of *this* year measures season, not anomaly: a route whose
+    December is always dear is not overpriced in December, it is simply December.
+    Only a multi-year baseline can tell "unusual" from "seasonal", and this is the
+    one such baseline available without a paid data feed.
+    """
+
+    level: str
+    """One of: low, typical, high."""
+    delta_vs_usual: float | None = None
+    """Signed difference against the usual fare for this search; negative is cheaper."""
+    currency: str = ""
+    note: str = ""
+
+    @property
+    def is_bargain(self) -> bool:
+        return self.level == "low"
+
+
 @dataclass
 class Quote:
     """The cheapest itinerary found for one origin/destination/date combination.
@@ -114,6 +137,7 @@ class Quote:
 
     cheapest: Itinerary
     alternatives: list[Itinerary] = field(default_factory=list)
+    insight: PriceInsight | None = None
 
     @property
     def cheapest_nonstop(self) -> Itinerary | None:

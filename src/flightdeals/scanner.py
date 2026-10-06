@@ -12,7 +12,7 @@ from datetime import UTC, date, datetime
 
 from . import catalog
 from .history import PriceHistory, window_label
-from .models import Deal, Itinerary, Quote
+from .models import Deal, Itinerary, PriceInsight, Quote
 from .providers.base import FareProvider, NoFlightsFound, ProviderError, SearchRequest
 from .scoring import Context, score_all
 
@@ -198,7 +198,10 @@ def scan(
         for attempt in range(1, attempts + 1):
             limiter.wait()
             try:
-                itineraries = provider.search(request)
+                if hasattr(provider, "search_with_insight"):
+                    itineraries, insight = provider.search_with_insight(request)
+                else:
+                    itineraries, insight = provider.search(request), None
             except NoFlightsFound as exc:
                 return window, request, None, str(exc), True
             except ProviderError as exc:
@@ -210,7 +213,7 @@ def scan(
                 last = exc
                 break
             else:
-                quote = _to_quote(itineraries)
+                quote = _to_quote(itineraries, insight)
                 return window, request, quote, None, False
         return window, request, None, str(last), False
 
@@ -247,9 +250,9 @@ def scan(
     )
 
 
-def _to_quote(itineraries: Iterable[Itinerary]) -> Quote:
+def _to_quote(itineraries: Iterable[Itinerary], insight: PriceInsight | None = None) -> Quote:
     ordered = sorted(itineraries, key=lambda it: it.price)
-    return Quote(cheapest=ordered[0], alternatives=ordered[1:])
+    return Quote(cheapest=ordered[0], alternatives=ordered[1:], insight=insight)
 
 
 def _rank(

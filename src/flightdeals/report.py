@@ -201,6 +201,12 @@ def best_combinations(
                     "flight_time": _duration(it.duration_out_min),
                     "cents_per_km": round(deal.cents_per_km, 2) if deal.cents_per_km else "",
                     "airlines": ", ".join(it.airlines),
+                    "vs_history": deal.quote.insight.level if deal.quote.insight else "",
+                    "vs_usual": (
+                        deal.quote.insight.delta_vs_usual
+                        if deal.quote.insight and deal.quote.insight.delta_vs_usual is not None
+                        else ""
+                    ),
                 }
             )
     # Each destination's own median across the windows it priced in, so a cell can

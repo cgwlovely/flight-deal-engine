@@ -152,3 +152,22 @@ def test_airline_filter_shows_up_in_the_failure_label():
     )
     result = scan(spec, FakeProvider({}), limiter=NO_WAIT)
     assert "[CZ]" in result.failures[0].request.label()
+
+
+def test_scanner_captures_a_providers_price_insight():
+    from flightdeals.models import PriceInsight
+
+    class Insightful(FakeProvider):
+        def search_with_insight(self, request):
+            return self.search(request), PriceInsight(level="low", delta_vs_usual=-94.0)
+
+    result = scan(spec(["SIN"], windows=WINDOWS[:1]), Insightful({"SIN": 1200}), limiter=NO_WAIT)
+    (deal,) = result.deals_by_window[WINDOWS[0].label]
+    assert deal.quote.insight.is_bargain
+    assert deal.quote.insight.delta_vs_usual == -94.0
+
+
+def test_a_provider_without_insights_still_works():
+    result = scan(spec(["SIN"], windows=WINDOWS[:1]), FakeProvider({"SIN": 1200}), limiter=NO_WAIT)
+    (deal,) = result.deals_by_window[WINDOWS[0].label]
+    assert deal.quote.insight is None

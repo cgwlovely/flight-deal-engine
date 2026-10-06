@@ -5,9 +5,13 @@ The distinction this module exists to respect: an airline *sale* and a cheap
 route's own price falling out of its own distribution. Only the second is worth
 waking someone up for, so nothing here knows or cares what a sale is.
 
-The signal is deliberately plain -- how far below its own history a fare has
-fallen -- because with a handful of observations per route anything cleverer is
-fitting noise. Build the history first.
+Two baselines, and the better one wins. If the source publishes its own verdict
+against years of its price history, that is used: it can tell an unusual fare from
+a merely seasonal one, which a within-year comparison cannot. December being dear
+everywhere is season, not anomaly, and only a multi-year baseline knows the
+difference. Failing that, the locally recorded median is the fallback, and with a
+handful of observations the signal is deliberately plain -- anything cleverer would
+be fitting noise.
 """
 
 from __future__ import annotations
@@ -37,7 +41,7 @@ class Finding:
     deal: Deal
     window: Window
     kind: str
-    """One of: record-low, below-baseline, watching (not yet enough history)."""
+    """One of: source-low, record-low, below-baseline, watching."""
     median: float | None
     minimum: float | None
     observations: int
@@ -45,13 +49,21 @@ class Finding:
 
     @property
     def is_alert(self) -> bool:
-        return self.kind in {"record-low", "below-baseline"}
+        return self.kind in {"source-low", "record-low", "below-baseline"}
 
     def message(self, currency: str = "AUD") -> str:
         it = self.deal.itinerary
         where = f"{it.origin}-{it.destination}"
         dates = f"{it.depart_date}" + (f"/{it.return_date}" if it.return_date else "")
         price = f"{currency} {it.price:,.0f}"
+        if self.kind == "source-low":
+            insight = self.deal.quote.insight
+            margin = (
+                f", {abs(insight.delta_vs_usual):,.0f} under"
+                if insight and insight.delta_vs_usual is not None
+                else ""
+            )
+            return f"{where} {dates}: {price} — low against this route's own history{margin}"
         if self.kind == "record-low":
             return (
                 f"{where} {dates}: {price} — lowest of {self.observations + 1} "
@@ -88,6 +100,24 @@ def detect(
     for window in result.spec.windows:
         for deal in result.deals_by_window.get(window.label, []):
             it = deal.itinerary
+            insight = deal.quote.insight
+            if insight is not None and insight.is_bargain:
+                # A multi-year verdict from the source outranks anything this
+                # database can know after a handful of scans, and unlike a
+                # within-year median it can tell "unusual" from "seasonal".
+                findings.append(
+                    Finding(
+                        deal=deal,
+                        window=window,
+                        kind="source-low",
+                        median=None,
+                        minimum=None,
+                        observations=0,
+                        pct_below_median=None,
+                    )
+                )
+                continue
+
             prior = history.prices(
                 it.origin, it.destination, window_label=window.label, before=cutoff
             )
@@ -129,13 +159,8 @@ def detect(
             )
 
     # Deepest discount first; record lows outrank ordinary dips at equal depth.
-    findings.sort(
-        key=lambda f: (
-            not f.is_alert,
-            f.kind != "record-low",
-            -(f.pct_below_median or 0.0),
-        )
-    )
+    order = {"source-low": 0, "record-low": 1, "below-baseline": 2, "watching": 3}
+    findings.sort(key=lambda f: (order[f.kind], -(f.pct_below_median or 0.0)))
     return findings
 
 
