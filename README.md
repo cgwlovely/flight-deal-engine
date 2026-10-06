@@ -52,6 +52,14 @@ flightdeals scan --dest LDH --window monthly --months 12 --nights 7
 # Is a carrier cheap on this market? Scan unfiltered and read -carriers.csv
 flightdeals scan --dest FCO,BCN,AMS,IST --window monthly --months 6
 
+# Plan around where you have not been, and watch what you want
+flightdeals profile --init                 # then edit ~/.flight-deal-engine/profile.yaml
+flightdeals destinations --unvisited       # catalogue minus anywhere you have been
+flightdeals scan --wishlist --window monthly --months 6 --nights 10
+
+# Radar: scan the wishlist and report only fares that are unusual for themselves
+flightdeals radar --wishlist --window monthly --months 3 --notify
+
 # What's in the catalogue, and how far away is it
 flightdeals destinations --origin BNE --region Europe
 
@@ -84,6 +92,8 @@ terminal switches to the same pivoted view automatically.
 | `--airlines CZ,MU,CA` | Only these marketing carriers (see the warning below) |
 | `--workers`, `--min-interval`, `--attempts` | Throughput vs. politeness |
 | `--no-history`, `--db PATH` | Where (or whether) to record prices |
+| `--wishlist`, `--unvisited` | Scope by your profile instead of by region |
+| `--no-self-transfer`, `--max-hours`, `--bags` | Quality filters before comparing |
 
 ## How the ranking works
 
@@ -123,6 +133,30 @@ src/flightdeals/
 To add a fare source, implement `FareProvider.search` and register it — nothing
 downstream knows where prices came from.
 
+## The radar
+
+`flightdeals radar` scans, records, and then reports only what is unusual:
+
+- **record-low** — cheaper than anything previously seen for this route and window,
+  by a margin (`--record-margin`, default 3%). Without a margin a flat history turns
+  every one-dollar dip into an alert, which is how a radar teaches you to ignore it.
+- **below-baseline** — at least `--threshold` percent (default 15) under this route's
+  own median.
+- **watching** — fewer than `--min-observations` (default 3) prior observations, so no
+  claim is made. A brand-new watchlist is entirely in this state; it needs three runs
+  before it can say anything.
+
+An airline sale is not an input. A sale is a marketing calendar; an anomaly is this
+route's own price leaving its own distribution, and only the second is worth an alert.
+
+`--notify` posts a macOS desktop notification, best-effort: a radar that crashes
+because the platform is not macOS would be worse than one that stays quiet.
+`contrib/com.flightdeals.radar.plist` is a launchd agent that runs it daily — edit the
+two absolute paths, then `launchctl load` it.
+
+Keep the daily volume modest. A wishlist of 15 destinations over 3 monthly windows is
+45 searches a run, which is fine once a day and not fine once an hour.
+
 ## Recording history
 
 The history component only earns its weight if you scan the same window
@@ -156,6 +190,27 @@ BNE-MEL-DOH-FCO fare — and crediting only the primary would file a 22-hour tri
 under the airline that flew two hours of it. Which carrier "really" operated a
 trip would need per-leg airlines and this source does not publish them, so credit
 is shared rather than guessed, and shares sum to more than 100%.
+
+## Planning around where you have not been
+
+Which destinations are worth scanning is a fact about you, not about airports, so it
+lives in `~/.flight-deal-engine/profile.yaml` rather than in the shared catalogue:
+
+```yaml
+visited:
+  regions: [Southeast Asia, New Zealand]
+  countries: [Japan]
+  airports: [SIN]
+wishlist: [NAN, BOB, APW, HNL]
+```
+
+`--unvisited` drops anything matched; `--wishlist` scans the list. Marking a region
+visited quietly removes twenty destinations from every future scan without editing a
+file that everyone shares.
+
+A note on Antarctica: there are no scheduled commercial flights, so nothing can be
+priced to it. The catalogue carries the expedition ports instead — Ushuaia (USH) and
+Punta Arenas (PUQ) — which is what you actually buy a ticket to.
 
 ## Caveats, honestly
 

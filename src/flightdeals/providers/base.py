@@ -31,6 +31,13 @@ class SearchRequest:
     max_duration_minutes: int | None = None
     airlines: tuple[str, ...] = ()
     """Restrict results to these marketing carriers (IATA codes). Empty = no filter."""
+    hide_self_transfer: bool = False
+    """Drop separate-ticket and self-transfer itineraries, where a missed connection
+    is the passenger's own problem."""
+    carry_on_bags: int = 0
+    checked_bags: int = 0
+    """Bags to price in, so a headline fare is not compared against one that bundles
+    luggage."""
 
     @property
     def trip(self) -> str:

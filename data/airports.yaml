@@ -31,6 +31,8 @@ airports:
   - {code: TBU, name: Nuku'alofa,     country: Tonga,       region: Pacific, lat: -21.241, lon: -175.150, tier: 1}
   - {code: POM, name: Port Moresby,   country: Papua New Guinea, region: Pacific, lat: -9.443, lon: 147.220, tier: 1}
   - {code: PPT, name: Papeete,        country: French Polynesia, region: Pacific, lat: -17.557, lon: -149.612, tier: 1}
+  - {code: BOB, name: Bora Bora,      country: French Polynesia, region: Pacific, lat: -16.444, lon: -151.751, tier: 2}
+  - {code: SUV, name: Suva,           country: Fiji,        region: Pacific, lat: -18.043, lon: 178.559, tier: 2}
   - {code: HIR, name: Honiara,        country: Solomon Islands, region: Pacific, lat: -9.428, lon: 160.055, tier: 2}
   - {code: GUM, name: Guam,           country: Guam,        region: Pacific, lat: 13.484, lon: 144.797, tier: 2}
   - {code: SON, name: Espiritu Santo, country: Vanuatu,     region: Pacific, lat: -15.505, lon: 167.220, tier: 2}
@@ -156,6 +158,9 @@ airports:
   - {code: ORD, name: Chicago,        country: USA,         region: North America, lat: 41.978, lon: -87.905, tier: 1}
   - {code: JFK, name: New York,       country: USA,         region: North America, lat: 40.640, lon: -73.779, tier: 1}
   - {code: HNL, name: Honolulu,       country: USA,         region: North America, lat: 21.319, lon: -157.922, tier: 1}
+  - {code: OGG, name: Maui,           country: USA,         region: North America, lat: 20.899, lon: -156.430, tier: 2}
+  - {code: KOA, name: Kona,           country: USA,         region: North America, lat: 19.739, lon: -156.046, tier: 2}
+  - {code: LIH, name: Kauai,          country: USA,         region: North America, lat: 21.976, lon: -159.339, tier: 2}
   - {code: YVR, name: Vancouver,      country: Canada,      region: North America, lat: 49.195, lon: -123.180, tier: 1}
   - {code: YYZ, name: Toronto,        country: Canada,      region: North America, lat: 43.677, lon: -79.631, tier: 2}
   - {code: YYC, name: Calgary,        country: Canada,      region: North America, lat: 51.114, lon: -114.020, tier: 2}
@@ -167,6 +172,8 @@ airports:
   - {code: EZE, name: Buenos Aires,   country: Argentina,   region: South America, lat: -34.822, lon: -58.536, tier: 1}
   - {code: LIM, name: Lima,           country: Peru,        region: South America, lat: -12.022, lon: -77.114, tier: 1}
   - {code: BOG, name: Bogota,         country: Colombia,    region: South America, lat: 4.702, lon: -74.146, tier: 2}
+  - {code: USH, name: Ushuaia (Antarctic gateway), country: Argentina, region: South America, lat: -54.843, lon: -68.296, tier: 2}
+  - {code: PUQ, name: Punta Arenas (Antarctic gateway), country: Chile, region: South America, lat: -53.002, lon: -70.854, tier: 2}
   # --- Africa ----------------------------------------------------------------
   - {code: JNB, name: Johannesburg,   country: South Africa, region: Africa, lat: -26.139, lon: 28.246, tier: 1}
   - {code: CPT, name: Cape Town,      country: South Africa, region: Africa, lat: -33.969, lon: 18.602, tier: 1}

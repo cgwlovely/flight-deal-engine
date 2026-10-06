@@ -137,6 +137,9 @@ class GoogleFlightsProvider:
             passengers=Passengers(adults=request.adults, children=request.children),
             currency=request.currency,
             language=self.language,
+            hide_separate_and_self_transfer=request.hide_self_transfer,
+            carry_on_bags=request.carry_on_bags,
+            checked_bags=request.checked_bags,
         )
 
     def _parse(self, html: str, request: SearchRequest) -> list[Itinerary]:

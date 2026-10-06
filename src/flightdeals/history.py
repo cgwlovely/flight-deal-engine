@@ -91,6 +91,27 @@ class PriceHistory:
         return len(rows)
 
     # -- reading ------------------------------------------------------------
+    def prices(
+        self,
+        origin: str,
+        destination: str,
+        *,
+        window_label: str = "",
+        before: datetime | None = None,
+    ) -> list[float]:
+        """Every price recorded for this route and window, oldest first."""
+        sql = (
+            "SELECT price FROM observations "
+            "WHERE origin=? AND destination=? AND window_label=?"
+        )
+        params: list = [origin, destination, window_label]
+        if before is not None:
+            sql += " AND scanned_at < ?"
+            params.append(before.isoformat())
+        sql += " ORDER BY scanned_at"
+        with closing(self._conn.cursor()) as cur:
+            return [r["price"] for r in cur.execute(sql, params)]
+
     def baseline(
         self,
         origin: str,
@@ -105,16 +126,9 @@ class PriceHistory:
         compared against itself. Timestamps are stored at microsecond precision
         precisely so that this cutoff can separate two scans seconds apart.
         """
-        sql = (
-            "SELECT price FROM observations "
-            "WHERE origin=? AND destination=? AND window_label=?"
+        prices = self.prices(
+            origin, destination, window_label=window_label, before=before
         )
-        params: list = [origin, destination, window_label]
-        if before is not None:
-            sql += " AND scanned_at < ?"
-            params.append(before.isoformat())
-        with closing(self._conn.cursor()) as cur:
-            prices = [r["price"] for r in cur.execute(sql, params)]
         if not prices:
             return None, 0
         return statistics.median(prices), len(prices)

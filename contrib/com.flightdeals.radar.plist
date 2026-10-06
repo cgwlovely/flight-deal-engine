@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Daily flight-deal radar.
+
+  Install:
+    cp contrib/com.flightdeals.radar.plist ~/Library/LaunchAgents/
+    # edit the two absolute paths below first, then:
+    launchctl load ~/Library/LaunchAgents/com.flightdeals.radar.plist
+
+  Remove:
+    launchctl unload ~/Library/LaunchAgents/com.flightdeals.radar.plist
+    rm ~/Library/LaunchAgents/com.flightdeals.radar.plist
+
+  Anomalies arrive as a desktop notification; the full run is appended to the log.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.flightdeals.radar</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/CHANGE_ME/flight-deal-engine/.venv/bin/flightdeals</string>
+    <string>radar</string>
+    <string>--wishlist</string>
+    <string>--window</string>
+    <string>monthly</string>
+    <string>--months</string>
+    <string>3</string>
+    <string>--nights</string>
+    <string>10</string>
+    <string>--notify</string>
+    <string>--quiet</string>
+    <string>--workers</string>
+    <string>2</string>
+    <string>--min-interval</string>
+    <string>1.5</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>8</integer>
+    <key>Minute</key><integer>15</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/CHANGE_ME/.flight-deal-engine/radar.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/CHANGE_ME/.flight-deal-engine/radar.err.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

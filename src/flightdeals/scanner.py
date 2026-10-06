@@ -75,6 +75,9 @@ class ScanSpec:
     max_stops: int | None = None
     max_duration_minutes: int | None = None
     airlines: tuple[str, ...] = ()
+    hide_self_transfer: bool = False
+    carry_on_bags: int = 0
+    checked_bags: int = 0
 
     def requests(self) -> list[tuple[Window, SearchRequest]]:
         out = []
@@ -95,6 +98,9 @@ class ScanSpec:
                             max_stops=self.max_stops,
                             max_duration_minutes=self.max_duration_minutes,
                             airlines=self.airlines,
+                            hide_self_transfer=self.hide_self_transfer,
+                            carry_on_bags=self.carry_on_bags,
+                            checked_bags=self.checked_bags,
                         ),
                     )
                 )
