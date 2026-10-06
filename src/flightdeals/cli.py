@@ -201,6 +201,14 @@ def cmd_scan(args) -> int:
         print(f"  {kind:9} {path}", file=sys.stderr)
     if result.failures:
         print(f"{len(result.failures)} route(s) returned no price.", file=sys.stderr)
+    blank = result.blank_windows
+    if blank:
+        print(
+            f"{len(blank)} window(s) priced nothing for any destination "
+            f"({blank[0].depart} onwards) — most likely beyond the airlines' "
+            "booking horizon, not unflown.",
+            file=sys.stderr,
+        )
     return 0
 
 

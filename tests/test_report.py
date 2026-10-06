@@ -141,3 +141,85 @@ def test_matrix_csv_is_written_for_multi_window_scans(tmp_path):
     rows = list(csv.DictReader(written["matrix"].open()))
     assert rows[0]["window"] == "2026-11"
     assert "LDH" in rows[0] and "NAN" in rows[0]
+
+
+class HorizonProvider:
+    """Prices nothing past a cutoff, the way an unloaded schedule behaves."""
+
+    name = "fake"
+
+    def __init__(self, cutoff):
+        self.cutoff = cutoff
+
+    def search(self, request):
+        if request.depart_date >= self.cutoff:
+            raise NoFlightsFound("no flights")
+        return [
+            Itinerary(
+                origin=request.origin,
+                destination=request.destination,
+                depart_date=request.depart_date,
+                return_date=request.return_date,
+                price=1000,
+                currency="AUD",
+                legs=[Leg(request.origin, request.destination, None, None, 120)],
+                source="fake",
+            )
+        ]
+
+
+def horizon_result():
+    from flightdeals import windows
+
+    return scan(
+        ScanSpec(
+            origin="BNE",
+            destinations=["NAN", "VLI", "APW"],
+            windows=windows.monthly(months=12, nights=7, today=date(2026, 10, 6)),
+        ),
+        HorizonProvider(cutoff=date(2027, 6, 1)),
+        limiter=RateLimiter(min_interval=0, jitter=0),
+    )
+
+
+def test_wholly_blank_windows_are_separated_from_unflown_routes():
+    result = horizon_result()
+    blank = [w.name for w in result.blank_windows]
+    assert blank == ["2027-06", "2027-07", "2027-08", "2027-09", "2027-10"]
+
+
+def test_markdown_explains_blank_windows_rather_than_calling_them_unflown(tmp_path):
+    written = report.write_all(horizon_result(), tmp_path, stamp="fixed")
+    md = written["markdown"].read_text()
+    assert "Windows with no prices at all" in md
+    assert "not loaded schedules that far out" in md
+    # Those routes must not also be listed as individually unflown.
+    assert "## Not priced" not in md
+
+
+def test_a_single_unflown_route_is_still_reported_normally(tmp_path):
+    written = report.write_all(make_result(), tmp_path, stamp="fixed")
+    md = written["markdown"].read_text()
+    assert "## Not priced" in md and "BNE-ZZZ" in md
+    assert "Windows with no prices at all" not in md
+
+
+def test_single_destination_scan_claims_no_horizon():
+    """One blank route is "it doesn't fly", not "schedules aren't loaded".
+
+    The inference needs at least three destinations agreeing before it is worth
+    making, so a one-route sweep never triggers it.
+    """
+    from flightdeals import windows
+
+    result = scan(
+        ScanSpec(
+            origin="BNE",
+            destinations=["LDH"],
+            windows=windows.monthly(months=12, nights=7, today=date(2026, 10, 6)),
+        ),
+        HorizonProvider(cutoff=date(2027, 6, 1)),
+        limiter=RateLimiter(min_interval=0, jitter=0),
+    )
+    assert result.blank_windows == []
+    assert len(result.failures) == 5

@@ -125,6 +125,29 @@ class ScanResult:
     def all_deals(self) -> list[Deal]:
         return [d for deals in self.deals_by_window.values() for d in deals]
 
+    @property
+    def blank_windows(self) -> list[Window]:
+        """Windows where nothing priced at all.
+
+        One unpriced route means that route does not fly. A window where *every*
+        destination came back empty means something else: airlines load schedules
+        roughly 8-12 months ahead, so a far-future window is unpriced because the
+        inventory does not exist yet, not because the flights do not. Reporting
+        those as "no flights" would be wrong, so they are called out separately.
+
+        This needs several destinations to mean anything. In a single-destination
+        scan "every destination came back empty" is just "that one route does not
+        fly then", so the inference is withheld.
+        """
+        if len(self.spec.destinations) < 3:
+            return []
+        return [
+            w
+            for w in self.spec.windows
+            if not self.deals_by_window.get(w.label)
+            and any(f.request.depart_date == w.depart for f in self.failures)
+        ]
+
     def best_per_destination(self) -> list[Deal]:
         """One row per destination: its cheapest window."""
         best: dict[str, Deal] = {}
