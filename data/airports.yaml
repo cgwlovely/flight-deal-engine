@@ -17,6 +17,14 @@ airports:
   - {code: TSV, name: Townsville,     country: Australia,   region: Australia, lat: -19.253, lon: 146.765, tier: 2}
   - {code: ASP, name: Alice Springs,  country: Australia,   region: Australia, lat: -23.807, lon: 133.902, tier: 2}
   - {code: LDH, name: Lord Howe Island, country: Australia, region: Australia, lat: -31.538, lon: 159.077, tier: 2}
+  - {code: NLK, name: Norfolk Island,  country: Australia,   region: Australia, lat: -29.041, lon: 167.939, tier: 2}
+  - {code: AYQ, name: Uluru (Ayers Rock), country: Australia, region: Australia, lat: -25.186, lon: 130.976, tier: 2}
+  - {code: BME, name: Broome,          country: Australia,   region: Australia, lat: -17.945, lon: 122.232, tier: 2}
+  - {code: LEA, name: Exmouth (Ningaloo), country: Australia, region: Australia, lat: -22.236, lon: 114.089, tier: 2}
+  - {code: XCH, name: Christmas Island, country: Australia,  region: Australia, lat: -10.451, lon: 105.690, tier: 2}
+  - {code: CCK, name: Cocos (Keeling), country: Australia,   region: Australia, lat: -12.189, lon: 96.834, tier: 2}
+  - {code: KGC, name: Kangaroo Island, country: Australia,   region: Australia, lat: -35.714, lon: 137.521, tier: 2}
+  - {code: HTI, name: Hamilton Island, country: Australia,   region: Australia, lat: -20.358, lon: 148.952, tier: 2}
   # --- New Zealand -----------------------------------------------------------
   - {code: AKL, name: Auckland,       country: New Zealand, region: New Zealand, lat: -37.008, lon: 174.792, tier: 1}
   - {code: CHC, name: Christchurch,   country: New Zealand, region: New Zealand, lat: -43.489, lon: 172.532, tier: 1}

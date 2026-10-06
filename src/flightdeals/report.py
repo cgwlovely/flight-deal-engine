@@ -162,13 +162,24 @@ def print_matrix(result: ScanResult, *, max_cols: int = 14) -> None:
 
 
 # -- cheapest window x destination combinations -----------------------------
-def best_combinations(result: ScanResult, *, limit: int | None = None) -> list[dict]:
-    """Flatten a multi-window scan into (window, destination) pairs, cheapest first.
+def best_combinations(
+    result: ScanResult, *, limit: int | None = None, by: str = "price"
+) -> list[dict]:
+    """Flatten a multi-window scan into (window, destination) pairs.
 
     For a traveller who is flexible on dates, neither "which city" nor "which
     month" is the question on its own -- the answer is a *pair*, and a cheap city
     in its dear month loses to a dear city in its cheap one. The matrix shows the
     whole grid; this ranks the individual cells.
+
+    Two orderings, and they answer different questions:
+
+    * ``by="price"`` -- the cheapest fares. Answers "what can I afford", and will
+      always put the nearest airports on top.
+    * ``by="discount"`` -- furthest below that destination's own median across the
+      scan. Answers "when is this unusually good", which is the question behind
+      wanting to feel you got a deal rather than merely a short flight. A route
+      seen in only one window has no median worth the name and gets no discount.
     """
     rows: list[dict] = []
     for window in result.spec.windows:
@@ -192,7 +203,27 @@ def best_combinations(result: ScanResult, *, limit: int | None = None) -> list[d
                     "airlines": ", ".join(it.airlines),
                 }
             )
-    rows.sort(key=lambda r: r["price"])
+    # Each destination's own median across the windows it priced in, so a cell can
+    # be read against its route rather than against the whole scan.
+    seen: dict[str, list[float]] = {}
+    for row in rows:
+        seen.setdefault(row["code"], []).append(row["price"])
+    for row in rows:
+        prices = seen[row["code"]]
+        if len(prices) < 3:
+            row["median_price"] = row["pct_vs_median"] = ""
+            continue
+        median = statistics.median(prices)
+        row["median_price"] = round(median)
+        row["pct_vs_median"] = round(100.0 * (row["price"] - median) / median, 1)
+
+    if by == "discount":
+        rows.sort(key=lambda r: (r["pct_vs_median"] == "", r["pct_vs_median"], r["price"]))
+    elif by == "price":
+        rows.sort(key=lambda r: r["price"])
+    else:
+        raise ValueError(f"unknown ordering {by!r}; use 'price' or 'discount'")
+
     for rank, row in enumerate(rows, start=1):
         row["rank"] = rank
     return rows[:limit] if limit else rows

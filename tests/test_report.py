@@ -322,3 +322,30 @@ def test_carriers_csv_is_written_for_multi_window_scans(tmp_path):
         "Qatar Airways",
         "Virgin Australia",
     }
+
+
+def test_combinations_can_rank_by_discount_against_each_route_s_own_median():
+    """"Unusually cheap for this route" is a different question from "cheap"."""
+    rows = report.best_combinations(seasonal_result(), by="discount")
+    # LDH in April is 600 against its own median of 1000: -40%. NAN in April is
+    # 1200 against 2000: also -40%, but dearer, so it sorts second.
+    assert (rows[0]["code"], rows[0]["window"]) == ("LDH", "2027-04")
+    assert rows[0]["pct_vs_median"] == -40.0
+    assert rows[1]["code"] == "NAN"
+    # Ranking by price alone would have put the cheap short hop on top regardless.
+    assert report.best_combinations(seasonal_result())[0]["price"] == 600
+
+
+def test_median_needs_three_windows_before_a_discount_is_claimed():
+    result = scan(
+        ScanSpec(origin="BNE", destinations=["SIN", "NRT"], windows=[WINDOW]),
+        Provider(),
+        limiter=RateLimiter(min_interval=0, jitter=0),
+    )
+    rows = report.best_combinations(result, by="discount")
+    assert all(r["pct_vs_median"] == "" for r in rows)
+
+
+def test_unknown_ordering_is_rejected():
+    with pytest.raises(ValueError, match="unknown ordering"):
+        report.best_combinations(seasonal_result(), by="vibes")

@@ -26,6 +26,14 @@ visited:
 
 # Places you actively want priced. Used by --wishlist and by `flightdeals radar`.
 wishlist: []         # e.g. [NAN, APW, PPT, HNL]
+
+# Worth going only when the fare is unusually low for that route. These are
+# scanned like anything else, but reported against their own baseline rather
+# than on sticker price.
+only_if_cheap: []    # e.g. [CNS, AYQ, PER, DRW]
+
+# Optional hard caps, if you would rather name a number than a condition.
+reserve: {}          # e.g. {AYQ: 450, PER: 500}
 """
 
 
@@ -35,7 +43,22 @@ class Profile:
     visited_countries: set[str] = field(default_factory=set)
     visited_airports: set[str] = field(default_factory=set)
     wishlist: list[str] = field(default_factory=list)
+    only_if_cheap: set[str] = field(default_factory=set)
+    """Places worth going only when the fare is unusually low for that route.
+
+    Expressed as a condition rather than a budget on purpose: "worth it if cheap"
+    is a statement about the route's own distribution, and inventing a dollar
+    figure for it would be putting words in the traveller's mouth. `reserve` is
+    there for anyone who does want to name a number.
+    """
+    reserve: dict[str, float] = field(default_factory=dict)
     path: Path | None = None
+
+    def is_conditional(self, code: str) -> bool:
+        return code.upper() in self.only_if_cheap
+
+    def reserve_for(self, code: str) -> float | None:
+        return self.reserve.get(code.upper())
 
     def has_visited(self, airport: Airport) -> bool:
         return (
@@ -54,6 +77,7 @@ class Profile:
             or self.visited_countries
             or self.visited_airports
             or self.wishlist
+            or self.only_if_cheap
         )
 
     def describe(self) -> str:
@@ -62,6 +86,12 @@ class Profile:
         lines.append(f"  visited countries: {', '.join(sorted(self.visited_countries)) or '-'}")
         lines.append(f"  visited airports:  {', '.join(sorted(self.visited_airports)) or '-'}")
         lines.append(f"  wishlist ({len(self.wishlist)}): {', '.join(self.wishlist) or '-'}")
+        lines.append(
+            f"  only if cheap:     {', '.join(sorted(self.only_if_cheap)) or '-'}"
+        )
+        if self.reserve:
+            caps = ", ".join(f"{k} <= {v:,.0f}" for k, v in sorted(self.reserve.items()))
+            lines.append(f"  reserve prices:    {caps}")
         return "\n".join(lines)
 
 
@@ -79,6 +109,8 @@ def load(path: str | Path | None = None) -> Profile:
         visited_countries={str(c).casefold() for c in (visited.get("countries") or [])},
         visited_airports={str(a).upper() for a in (visited.get("airports") or [])},
         wishlist=[str(c).upper() for c in (payload.get("wishlist") or [])],
+        only_if_cheap={str(c).upper() for c in (payload.get("only_if_cheap") or [])},
+        reserve={str(k).upper(): float(v) for k, v in (payload.get("reserve") or {}).items()},
         path=target,
     )
 
