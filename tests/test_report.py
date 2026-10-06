@@ -2,6 +2,8 @@ import csv
 import json
 from datetime import date
 
+import pytest
+
 from flightdeals import report
 from flightdeals.models import Itinerary, Leg
 from flightdeals.providers.base import NoFlightsFound
@@ -245,3 +247,62 @@ def test_combos_csv_is_written_and_capped_by_limit(tmp_path):
     assert len(rows) == 22
     assert rows[0]["code"] == "LDH" and rows[0]["depart"] == "2027-04-15"
     assert len(report.best_combinations(result, limit=5)) == 5
+
+
+class CarrierProvider:
+    """Two carriers trading wins across months, so attribution has something to find."""
+
+    name = "fake"
+
+    def search(self, request):
+        cheap_month = request.depart_date.month in (1, 3)
+        airlines = ["China Southern"] if cheap_month else ["Qatar Airways", "Virgin Australia"]
+        price = 1400 if cheap_month else 1700
+        return [
+            Itinerary(
+                origin=request.origin,
+                destination=request.destination,
+                depart_date=request.depart_date,
+                return_date=request.return_date,
+                price=price,
+                currency="AUD",
+                airlines=airlines,
+                legs=[Leg(request.origin, request.destination, None, None, 1300)],
+                source="fake",
+            )
+        ]
+
+
+def carrier_result():
+    from flightdeals import windows
+
+    return scan(
+        ScanSpec(
+            origin="BNE",
+            destinations=["FCO", "AMS", "IST"],
+            windows=windows.monthly(months=6, nights=21, today=date(2026, 10, 6)),
+        ),
+        CarrierProvider(),
+        limiter=RateLimiter(min_interval=0, jitter=0),
+    )
+
+
+def test_carrier_summary_counts_cells_won_by_primary_marketing_carrier():
+    rows = {r["carrier"]: r for r in report.carrier_summary(carrier_result())}
+    assert set(rows) == {"China Southern", "Qatar Airways"}
+    # Jan and Mar across three cities = 6 cells for the cheap carrier, 12 for the other.
+    assert rows["China Southern"]["cells_won"] == 6
+    assert rows["Qatar Airways"]["cells_won"] == 12
+    assert rows["China Southern"]["share_pct"] == pytest.approx(33.3, abs=0.1)
+    assert rows["China Southern"]["cheapest"] == 1400
+
+
+def test_carrier_summary_is_ordered_by_wins_then_price():
+    rows = report.carrier_summary(carrier_result())
+    assert [r["carrier"] for r in rows] == ["Qatar Airways", "China Southern"]
+
+
+def test_carriers_csv_is_written_for_multi_window_scans(tmp_path):
+    written = report.write_all(carrier_result(), tmp_path, stamp="fixed")
+    rows = list(csv.DictReader(written["carriers"].open()))
+    assert {r["carrier"] for r in rows} == {"China Southern", "Qatar Airways"}

@@ -73,8 +73,10 @@ def build_parser() -> argparse.ArgumentParser:
     scan_p.add_argument(
         "--airlines",
         type=_csv_list,
-        help="only these marketing carriers, e.g. CZ,MU,CA — use twice-run scans "
-        "to measure what one carrier group is worth against the open market",
+        help="only these marketing carriers, e.g. CZ,MU,CA. Use when you want to "
+        "fly them — NOT to compare their prices: the filter also narrows which "
+        "fares are offered and returns a dearer price for the same flights. To ask "
+        "whether a carrier is cheap, scan unfiltered and read the carrier table.",
     )
     scan_p.add_argument("--one-way", action="store_true", help="price one-way instead of return")
     scan_p.add_argument("--workers", type=int, default=4, help="concurrent requests (default 4)")
@@ -197,6 +199,7 @@ def cmd_scan(args) -> int:
         # window-by-destination matrix instead of printing a table per window.
         report.print_matrix(result)
         report.print_combos(result, limit=args.limit)
+        report.print_carriers(result)
     else:
         for window in window_list:
             deals = result.deals_by_window.get(window.label, [])

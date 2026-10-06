@@ -49,10 +49,8 @@ flightdeals scan --depart 2027-04-02 --return 2027-04-14 --flex 3
 # When is this route cheap? One fixed-length trip per month for a year
 flightdeals scan --dest LDH --window monthly --months 12 --nights 7
 
-# What is one carrier group worth? Run the same scan twice and subtract
-flightdeals scan --dest FCO,BCN,AMS --window monthly --months 6 --out out/open
-flightdeals scan --dest FCO,BCN,AMS --window monthly --months 6 --out out/cn \
-  --airlines CA,CZ,MU,HU,MF
+# Is a carrier cheap on this market? Scan unfiltered and read -carriers.csv
+flightdeals scan --dest FCO,BCN,AMS,IST --window monthly --months 6
 
 # What's in the catalogue, and how far away is it
 flightdeals destinations --origin BNE --region Europe
@@ -83,7 +81,7 @@ terminal switches to the same pivoted view automatically.
 | `--region`, `--dest`, `--exclude`, `--all` | Scope the destination list |
 | `--seat`, `--adults`, `--children`, `--currency` | Search parameters |
 | `--max-stops 0` | Nonstop only |
-| `--airlines CZ,MU,CA` | Only these marketing carriers |
+| `--airlines CZ,MU,CA` | Only these marketing carriers (see the warning below) |
 | `--workers`, `--min-interval`, `--attempts` | Throughput vs. politeness |
 | `--no-history`, `--db PATH` | Where (or whether) to record prices |
 
@@ -136,6 +134,21 @@ repeatedly. A daily cron is enough:
 ```
 
 All observations land in `~/.flight-deal-engine/history.db`.
+
+## Do not use `--airlines` to compare prices
+
+`--airlines` narrows more than the carrier: Google returns a **dearer** fare for the
+identical airline and routing once the filter is on. Measured on BNE-IST, same dates,
+same minute: A$1,390 unfiltered versus A$1,767 filtered, both of them China Southern
+BNE-CAN-IST. Filtering apparently also restricts which fare and ticketing
+combinations are offered, so a filtered scan systematically overstates what a
+carrier charges, and "rerun it filtered and subtract" gives a confidently wrong
+answer.
+
+Use `--airlines` when you have decided to fly someone. To find out whether a
+carrier is cheap, scan unfiltered and read the carrier table (`-carriers.csv`,
+also printed for multi-window scans): it counts how many window x destination
+cells each carrier actually holds the cheapest fare for.
 
 ## Caveats, honestly
 

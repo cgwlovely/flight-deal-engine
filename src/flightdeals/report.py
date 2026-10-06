@@ -245,6 +245,84 @@ def print_combos(result: ScanResult, *, limit: int = 20) -> None:
     Console().print(table)
 
 
+# -- carrier attribution ----------------------------------------------------
+def carrier_summary(result: ScanResult) -> list[dict]:
+    """Which carriers actually hold the cheapest fares, counted over the scan.
+
+    This is the sound way to ask "is carrier X cheap on this market". The obvious
+    alternative -- rerun the scan with `--airlines X` and compare -- does not work:
+    Google returns a *dearer* fare for the identical carrier and routing once the
+    filter is applied (observed A$1,390 unfiltered vs A$1,767 filtered on the same
+    BNE-CAN-IST itinerary, same minute), because the filter also narrows which fare
+    and ticketing combinations are considered. So attribute the open-market winners
+    instead of re-pricing a restricted market.
+
+    Grouped by primary marketing carrier, which needs no taxonomy and so cannot
+    quietly encode an opinion about which airlines belong together.
+    """
+    cells = best_combinations(result)
+    groups: dict[str, list[dict]] = {}
+    for cell in cells:
+        primary = (cell["airlines"].split(",")[0] or "unknown").strip()
+        groups.setdefault(primary, []).append(cell)
+
+    rows = []
+    for carrier, won in groups.items():
+        prices = [c["price"] for c in won]
+        best = min(won, key=lambda c: c["price"])
+        rows.append(
+            {
+                "carrier": carrier,
+                "cells_won": len(won),
+                "share_pct": round(100.0 * len(won) / len(cells), 1) if cells else 0,
+                "median_price": round(statistics.median(prices)),
+                "cheapest": min(prices),
+                "best_city": best["city"],
+                "best_depart": best["depart"],
+                "currency": result.spec.currency,
+            }
+        )
+    rows.sort(key=lambda r: (-r["cells_won"], r["median_price"]))
+    return rows
+
+
+def write_carriers_csv(result: ScanResult, path: Path) -> Path:
+    rows = carrier_summary(result)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()) if rows else ["carrier"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+def print_carriers(result: ScanResult, *, limit: int = 12) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
+    rows = carrier_summary(result)
+    if not rows:
+        return
+    cur = result.spec.currency
+    table = Table(title="Who holds the cheapest fares", header_style="bold")
+    table.add_column("Carrier")
+    table.add_column("Cells won", justify="right")
+    table.add_column("Share", justify="right")
+    table.add_column("Median", justify="right")
+    table.add_column("Cheapest", justify="right")
+    table.add_column("Best cell")
+    for r in rows[:limit]:
+        table.add_row(
+            r["carrier"][:24],
+            str(r["cells_won"]),
+            f"{r['share_pct']}%",
+            _fmt_money(r["median_price"], cur),
+            _fmt_money(r["cheapest"], cur),
+            f"{r['best_city']} {r['best_depart'][:7]}",
+        )
+    Console().print(table)
+
+
 # -- terminal ---------------------------------------------------------------
 def print_table(deals: list[Deal], *, title: str, limit: int = 25) -> None:
     from rich.console import Console
@@ -504,4 +582,7 @@ def write_all(result: ScanResult, out_dir: Path, *, stamp: str | None = None) ->
     if len(result.spec.windows) > 1:
         written["matrix"] = write_matrix_csv(result, base.with_name(base.name + "-matrix.csv"))
         written["combos"] = write_combos_csv(result, base.with_name(base.name + "-combos.csv"))
+        written["carriers"] = write_carriers_csv(
+            result, base.with_name(base.name + "-carriers.csv")
+        )
     return written
