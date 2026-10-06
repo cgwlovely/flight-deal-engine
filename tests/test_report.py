@@ -256,7 +256,7 @@ class CarrierProvider:
 
     def search(self, request):
         cheap_month = request.depart_date.month in (1, 3)
-        airlines = ["China Southern"] if cheap_month else ["Qatar Airways", "Virgin Australia"]
+        airlines = ["China Southern"] if cheap_month else ["Virgin Australia", "Qatar Airways"]
         price = 1400 if cheap_month else 1700
         return [
             Itinerary(
@@ -287,22 +287,38 @@ def carrier_result():
     )
 
 
-def test_carrier_summary_counts_cells_won_by_primary_marketing_carrier():
+def test_carrier_summary_credits_every_carrier_on_a_fare():
+    """A feeder carrier must not take the credit for a long-haul fare on its own."""
     rows = {r["carrier"]: r for r in report.carrier_summary(carrier_result())}
-    assert set(rows) == {"China Southern", "Qatar Airways"}
+    assert set(rows) == {"China Southern", "Qatar Airways", "Virgin Australia"}
     # Jan and Mar across three cities = 6 cells for the cheap carrier, 12 for the other.
-    assert rows["China Southern"]["cells_won"] == 6
-    assert rows["Qatar Airways"]["cells_won"] == 12
+    assert rows["China Southern"]["cells_present"] == 6
+    assert rows["Qatar Airways"]["cells_present"] == 12
+    # Virgin only ever appears alongside Qatar, so it is credited the same 12 cells
+    # even though it is the primary name on all of them.
+    assert rows["Virgin Australia"]["cells_present"] == 12
+    assert rows["Virgin Australia"]["cells_as_primary"] == 12
+    assert rows["Qatar Airways"]["cells_as_primary"] == 0
     assert rows["China Southern"]["share_pct"] == pytest.approx(33.3, abs=0.1)
     assert rows["China Southern"]["cheapest"] == 1400
 
 
-def test_carrier_summary_is_ordered_by_wins_then_price():
+def test_carrier_shares_may_exceed_one_hundred_percent():
     rows = report.carrier_summary(carrier_result())
-    assert [r["carrier"] for r in rows] == ["Qatar Airways", "China Southern"]
+    assert sum(r["share_pct"] for r in rows) > 100
+
+
+def test_carrier_summary_is_ordered_by_presence_then_price():
+    rows = report.carrier_summary(carrier_result())
+    assert [r["carrier"] for r in rows][0] in {"Qatar Airways", "Virgin Australia"}
+    assert rows[-1]["carrier"] == "China Southern"
 
 
 def test_carriers_csv_is_written_for_multi_window_scans(tmp_path):
     written = report.write_all(carrier_result(), tmp_path, stamp="fixed")
     rows = list(csv.DictReader(written["carriers"].open()))
-    assert {r["carrier"] for r in rows} == {"China Southern", "Qatar Airways"}
+    assert {r["carrier"] for r in rows} == {
+        "China Southern",
+        "Qatar Airways",
+        "Virgin Australia",
+    }

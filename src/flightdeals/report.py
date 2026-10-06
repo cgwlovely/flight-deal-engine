@@ -247,7 +247,7 @@ def print_combos(result: ScanResult, *, limit: int = 20) -> None:
 
 # -- carrier attribution ----------------------------------------------------
 def carrier_summary(result: ScanResult) -> list[dict]:
-    """Which carriers actually hold the cheapest fares, counted over the scan.
+    """Which carriers appear in the cheapest fares, counted over the scan.
 
     This is the sound way to ask "is carrier X cheap on this market". The obvious
     alternative -- rerun the scan with `--airlines X` and compare -- does not work:
@@ -257,14 +257,22 @@ def carrier_summary(result: ScanResult) -> list[dict]:
     and ticketing combinations are considered. So attribute the open-market winners
     instead of re-pricing a restricted market.
 
-    Grouped by primary marketing carrier, which needs no taxonomy and so cannot
-    quietly encode an opinion about which airlines belong together.
+    Every carrier on an itinerary is credited, not just the first. The first listed
+    is frequently a short domestic feeder -- "Virgin Australia, Qatar Airways" for a
+    BNE-MEL-DOH-FCO fare -- so crediting only the primary would file the fare under
+    the airline that flew two of its twenty-two hours. Deciding which carrier "really"
+    operated a trip would need per-leg airlines, and this source does not publish
+    them, so credit is shared rather than guessed. One cell can therefore credit
+    several carriers and the shares sum to more than 100%.
     """
     cells = best_combinations(result)
     groups: dict[str, list[dict]] = {}
+    primaries: dict[str, int] = {}
     for cell in cells:
-        primary = (cell["airlines"].split(",")[0] or "unknown").strip()
-        groups.setdefault(primary, []).append(cell)
+        names = [n.strip() for n in cell["airlines"].split(",") if n.strip()] or ["unknown"]
+        for name in dict.fromkeys(names):
+            groups.setdefault(name, []).append(cell)
+        primaries[names[0]] = primaries.get(names[0], 0) + 1
 
     rows = []
     for carrier, won in groups.items():
@@ -273,8 +281,9 @@ def carrier_summary(result: ScanResult) -> list[dict]:
         rows.append(
             {
                 "carrier": carrier,
-                "cells_won": len(won),
+                "cells_present": len(won),
                 "share_pct": round(100.0 * len(won) / len(cells), 1) if cells else 0,
+                "cells_as_primary": primaries.get(carrier, 0),
                 "median_price": round(statistics.median(prices)),
                 "cheapest": min(prices),
                 "best_city": best["city"],
@@ -282,7 +291,7 @@ def carrier_summary(result: ScanResult) -> list[dict]:
                 "currency": result.spec.currency,
             }
         )
-    rows.sort(key=lambda r: (-r["cells_won"], r["median_price"]))
+    rows.sort(key=lambda r: (-r["cells_present"], r["median_price"]))
     return rows
 
 
@@ -304,9 +313,12 @@ def print_carriers(result: ScanResult, *, limit: int = 12) -> None:
     if not rows:
         return
     cur = result.spec.currency
-    table = Table(title="Who holds the cheapest fares", header_style="bold")
+    table = Table(
+        title="Carriers appearing in the cheapest fares (a fare can credit several)",
+        header_style="bold",
+    )
     table.add_column("Carrier")
-    table.add_column("Cells won", justify="right")
+    table.add_column("Cells", justify="right")
     table.add_column("Share", justify="right")
     table.add_column("Median", justify="right")
     table.add_column("Cheapest", justify="right")
@@ -314,7 +326,7 @@ def print_carriers(result: ScanResult, *, limit: int = 12) -> None:
     for r in rows[:limit]:
         table.add_row(
             r["carrier"][:24],
-            str(r["cells_won"]),
+            str(r["cells_present"]),
             f"{r['share_pct']}%",
             _fmt_money(r["median_price"], cur),
             _fmt_money(r["cheapest"], cur),

@@ -147,8 +147,15 @@ answer.
 
 Use `--airlines` when you have decided to fly someone. To find out whether a
 carrier is cheap, scan unfiltered and read the carrier table (`-carriers.csv`,
-also printed for multi-window scans): it counts how many window x destination
-cells each carrier actually holds the cheapest fare for.
+also printed for multi-window scans): it counts the window x destination cells
+whose cheapest fare each carrier appears on.
+
+Every carrier on a fare is credited, not just the first. The first listed is
+often a short domestic feeder — "Virgin Australia, Qatar Airways" for a
+BNE-MEL-DOH-FCO fare — and crediting only the primary would file a 22-hour trip
+under the airline that flew two hours of it. Which carrier "really" operated a
+trip would need per-leg airlines and this source does not publish them, so credit
+is shared rather than guessed, and shares sum to more than 100%.
 
 ## Caveats, honestly
 
