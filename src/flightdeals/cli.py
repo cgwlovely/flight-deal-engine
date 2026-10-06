@@ -57,6 +57,13 @@ def _add_window_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--flex", type=int, default=0, help="with --depart, also try +/- N days (fixed length)"
     )
+    p.add_argument(
+        "--flex-step",
+        type=int,
+        default=1,
+        help="with --flex, days between sampled departures (default 1). A wide sweep at "
+        "a coarse step covers a whole month without pricing every single day of it.",
+    )
     p.add_argument("--months", type=int, default=12, help="with --window monthly: how many months")
     p.add_argument("--nights", type=int, default=7, help="with --window monthly: trip length")
     p.add_argument("--day", type=int, default=15, help="with --window monthly: day of month")
@@ -198,7 +205,9 @@ def windows_from_args(args) -> list[Window]:
     if args.depart:
         ret = None if args.one_way else args.ret
         if args.flex:
-            return windows.around(args.depart, ret, flex_days=args.flex)
+            return windows.around(
+                args.depart, ret, flex_days=args.flex, step=args.flex_step
+            )
         return [Window(args.depart, ret, name="custom")]
     if args.window == "monthly":
         return windows.monthly(months=args.months, nights=args.nights, day=args.day)

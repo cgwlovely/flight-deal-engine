@@ -39,3 +39,16 @@ def test_monthly_rolls_the_year_over_from_december():
 def test_monthly_clamps_day_to_short_months():
     sweep = windows.monthly(months=4, day=31, today=date(2026, 12, 31))
     assert [w.depart.day for w in sweep] == [31, 28, 31, 30]  # Jan, Feb, Mar, Apr 2027
+
+
+def test_around_can_sample_at_a_coarse_step():
+    """A month-wide sweep should not have to price all 25 departures in it."""
+    flex = windows.around(date(2026, 12, 17), date(2026, 12, 27), flex_days=12, step=3)
+    assert [w.depart.day for w in flex] == [5, 8, 11, 14, 17, 20, 23, 26, 29]
+    assert {w.nights for w in flex} == {10}
+    assert [w.name for w in flex][:2] == ["-12d", "-9d"]
+
+
+def test_around_step_larger_than_flex_yields_only_the_base_window():
+    flex = windows.around(date(2026, 12, 17), date(2026, 12, 27), flex_days=2, step=5)
+    assert [w.name for w in flex] == ["-2d"]
