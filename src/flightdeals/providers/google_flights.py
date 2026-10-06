@@ -29,6 +29,46 @@ from .base import NoFlightsFound, ProviderError, SearchRequest
 PAYLOAD_SECTIONS = (2, 3)
 
 
+def _extract_json(blob: str) -> str:
+    """Pull the complete JSON array that follows ``data:`` out of the page script.
+
+    Splitting on ``data:`` and then trimming the last comma is the usual shortcut,
+    and it breaks whenever the trailing arguments differ (``sideChannel`` present
+    or not, nested commas inside strings). Instead, walk from the opening bracket
+    and stop when it closes, skipping over string literals so that brackets and
+    commas inside them cannot throw the count off.
+    """
+    marker = blob.find("data:")
+    if marker == -1:
+        raise ProviderError("no data: marker in page payload")
+    start = blob.find("[", marker)
+    if start == -1:
+        raise ProviderError("no JSON array after data: marker")
+
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(blob)):
+        char = blob[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in "[{":
+            depth += 1
+        elif char in "]}":
+            depth -= 1
+            if depth == 0:
+                return blob[start : index + 1]
+    raise ProviderError("unterminated JSON array in page payload")
+
+
 def _time(value: list[int | None] | None) -> tuple[int, int]:
     """Google omits zero components: ``[8]`` is 08:00 and ``[None, 31]`` is 00:31."""
     padded = [*(value or []), None, None]
@@ -106,12 +146,11 @@ class GoogleFlightsProvider:
                 "(rate limited, consent wall, or page layout changed)"
             )
         blob = script.text()
+        if "errorHasStatus" in blob:
+            raise NoFlightsFound(f"no flights for {request.label()}")
         try:
-            raw = blob.split("data:", 1)[1].rsplit(",", 1)[0]
-            payload = json.loads(raw)
-        except (IndexError, ValueError) as exc:
-            if "errorHasStatus" in blob:
-                raise NoFlightsFound(f"no flights for {request.label()}") from None
+            payload = json.loads(_extract_json(blob))
+        except ValueError as exc:
             raise ProviderError(f"unreadable payload for {request.label()}: {exc}") from exc
 
         itineraries: list[Itinerary] = []

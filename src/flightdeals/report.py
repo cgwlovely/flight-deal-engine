@@ -161,6 +161,90 @@ def print_matrix(result: ScanResult, *, max_cols: int = 14) -> None:
         print(f"({len(codes) - max_cols} more destination(s) in the CSV)")
 
 
+# -- cheapest window x destination combinations -----------------------------
+def best_combinations(result: ScanResult, *, limit: int | None = None) -> list[dict]:
+    """Flatten a multi-window scan into (window, destination) pairs, cheapest first.
+
+    For a traveller who is flexible on dates, neither "which city" nor "which
+    month" is the question on its own -- the answer is a *pair*, and a cheap city
+    in its dear month loses to a dear city in its cheap one. The matrix shows the
+    whole grid; this ranks the individual cells.
+    """
+    rows: list[dict] = []
+    for window in result.spec.windows:
+        for deal in result.deals_by_window.get(window.label, []):
+            it = deal.itinerary
+            ap = catalog.get(it.destination)
+            rows.append(
+                {
+                    "window": window.name or window.label,
+                    "depart": it.depart_date.isoformat(),
+                    "return": it.return_date.isoformat() if it.return_date else "",
+                    "nights": it.nights or "",
+                    "code": it.destination,
+                    "city": ap.name,
+                    "country": ap.country,
+                    "price": round(it.price),
+                    "currency": it.currency,
+                    "stops": _stops(deal),
+                    "flight_time": _duration(it.duration_out_min),
+                    "cents_per_km": round(deal.cents_per_km, 2) if deal.cents_per_km else "",
+                    "airlines": ", ".join(it.airlines),
+                }
+            )
+    rows.sort(key=lambda r: r["price"])
+    for rank, row in enumerate(rows, start=1):
+        row["rank"] = rank
+    return rows[:limit] if limit else rows
+
+
+def write_combos_csv(result: ScanResult, path: Path) -> Path:
+    rows = best_combinations(result)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()) if rows else ["rank"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+def print_combos(result: ScanResult, *, limit: int = 20) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
+    rows = best_combinations(result, limit=limit)
+    if not rows:
+        return
+    cur = result.spec.currency
+    table = Table(
+        title=f"Cheapest date x destination combinations from {result.spec.origin}",
+        header_style="bold",
+    )
+    for name, justify in [
+        ("#", "right"),
+        ("Depart", "left"),
+        ("Destination", "left"),
+        ("Price", "right"),
+        ("Stops", "left"),
+        ("Flight", "right"),
+        ("c/km", "right"),
+        ("Airline", "left"),
+    ]:
+        table.add_column(name, justify=justify, no_wrap=(name != "Airline"))
+    for r in rows:
+        table.add_row(
+            str(r["rank"]),
+            r["depart"],
+            f"{r['city']} ({r['code']})",
+            _fmt_money(r["price"], cur),
+            r["stops"],
+            r["flight_time"],
+            str(r["cents_per_km"]),
+            (r["airlines"] or "-")[:26],
+        )
+    Console().print(table)
+
+
 # -- terminal ---------------------------------------------------------------
 def print_table(deals: list[Deal], *, title: str, limit: int = 25) -> None:
     from rich.console import Console
@@ -419,4 +503,5 @@ def write_all(result: ScanResult, out_dir: Path, *, stamp: str | None = None) ->
         written["csv"] = write_csv(best, base.with_suffix(".csv"))
     if len(result.spec.windows) > 1:
         written["matrix"] = write_matrix_csv(result, base.with_name(base.name + "-matrix.csv"))
+        written["combos"] = write_combos_csv(result, base.with_name(base.name + "-combos.csv"))
     return written

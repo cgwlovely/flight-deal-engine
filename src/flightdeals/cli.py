@@ -189,6 +189,7 @@ def cmd_scan(args) -> int:
         # Many windows, few destinations: the question is "when", so pivot to a
         # window-by-destination matrix instead of printing a table per window.
         report.print_matrix(result)
+        report.print_combos(result, limit=args.limit)
     else:
         for window in window_list:
             deals = result.deals_by_window.get(window.label, [])

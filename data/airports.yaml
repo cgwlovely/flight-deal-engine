@@ -120,6 +120,31 @@ airports:
   - {code: PRG, name: Prague,         country: Czechia,     region: Europe, lat: 50.100, lon: 14.260, tier: 2}
   - {code: BUD, name: Budapest,       country: Hungary,     region: Europe, lat: 47.437, lon: 19.262, tier: 2}
   - {code: WAW, name: Warsaw,         country: Poland,      region: Europe, lat: 52.166, lon: 20.967, tier: 2}
+  - {code: BRU, name: Brussels,       country: Belgium,     region: Europe, lat: 50.901, lon: 4.484, tier: 2}
+  - {code: GVA, name: Geneva,         country: Switzerland, region: Europe, lat: 46.238, lon: 6.109, tier: 2}
+  - {code: HAM, name: Hamburg,        country: Germany,     region: Europe, lat: 53.630, lon: 9.988, tier: 2}
+  - {code: DUS, name: Dusseldorf,     country: Germany,     region: Europe, lat: 51.289, lon: 6.767, tier: 2}
+  - {code: NCE, name: Nice,           country: France,      region: Europe, lat: 43.665, lon: 7.215, tier: 2}
+  - {code: NAP, name: Naples,         country: Italy,       region: Europe, lat: 40.886, lon: 14.291, tier: 2}
+  - {code: VCE, name: Venice,         country: Italy,       region: Europe, lat: 45.505, lon: 12.352, tier: 2}
+  - {code: BLQ, name: Bologna,        country: Italy,       region: Europe, lat: 44.531, lon: 11.297, tier: 2}
+  - {code: CTA, name: Catania,        country: Italy,       region: Europe, lat: 37.467, lon: 15.064, tier: 2}
+  - {code: OPO, name: Porto,          country: Portugal,    region: Europe, lat: 41.248, lon: -8.681, tier: 2}
+  - {code: AGP, name: Malaga,         country: Spain,       region: Europe, lat: 36.675, lon: -4.499, tier: 2}
+  - {code: VLC, name: Valencia,       country: Spain,       region: Europe, lat: 39.489, lon: -0.482, tier: 2}
+  - {code: SVQ, name: Seville,        country: Spain,       region: Europe, lat: 37.418, lon: -5.893, tier: 2}
+  - {code: SKG, name: Thessaloniki,   country: Greece,      region: Europe, lat: 40.520, lon: 22.971, tier: 2}
+  - {code: ZAG, name: Zagreb,         country: Croatia,     region: Europe, lat: 45.743, lon: 16.069, tier: 2}
+  - {code: SPU, name: Split,          country: Croatia,     region: Europe, lat: 43.539, lon: 16.298, tier: 2}
+  - {code: BEG, name: Belgrade,       country: Serbia,      region: Europe, lat: 44.819, lon: 20.309, tier: 2}
+  - {code: TIA, name: Tirana,         country: Albania,     region: Europe, lat: 41.415, lon: 19.720, tier: 2}
+  - {code: SOF, name: Sofia,          country: Bulgaria,    region: Europe, lat: 42.696, lon: 23.411, tier: 2}
+  - {code: OTP, name: Bucharest,      country: Romania,     region: Europe, lat: 44.572, lon: 26.102, tier: 2}
+  - {code: KRK, name: Krakow,         country: Poland,      region: Europe, lat: 50.078, lon: 19.785, tier: 2}
+  - {code: RIX, name: Riga,           country: Latvia,      region: Europe, lat: 56.924, lon: 23.971, tier: 2}
+  - {code: TLL, name: Tallinn,        country: Estonia,     region: Europe, lat: 59.413, lon: 24.833, tier: 2}
+  - {code: VNO, name: Vilnius,        country: Lithuania,   region: Europe, lat: 54.637, lon: 25.286, tier: 2}
+  - {code: KEF, name: Reykjavik,      country: Iceland,     region: Europe, lat: 63.985, lon: -22.605, tier: 2}
   # --- North America ---------------------------------------------------------
   - {code: LAX, name: Los Angeles,    country: USA,         region: North America, lat: 33.942, lon: -118.408, tier: 1}
   - {code: SFO, name: San Francisco,  country: USA,         region: North America, lat: 37.619, lon: -122.375, tier: 1}

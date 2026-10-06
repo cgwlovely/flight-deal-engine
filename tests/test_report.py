@@ -223,3 +223,25 @@ def test_single_destination_scan_claims_no_horizon():
     )
     assert result.blank_windows == []
     assert len(result.failures) == 5
+
+
+def test_combinations_rank_cells_not_cities_or_months():
+    """A dear city in its cheap month can beat a cheap city in its dear one."""
+    rows = report.best_combinations(seasonal_result())
+    assert len(rows) == 2 * 11, "two destinations x eleven flown months"
+    assert rows[0]["price"] == 600 and rows[0]["code"] == "LDH"
+    assert rows[0]["window"] == "2027-04"
+    assert [r["rank"] for r in rows[:3]] == [1, 2, 3]
+    assert rows == sorted(rows, key=lambda r: r["price"])
+    # NAN in April (1200) must outrank LDH in December (1800).
+    order = [(r["code"], r["window"]) for r in rows]
+    assert order.index(("NAN", "2027-04")) < order.index(("LDH", "2026-12"))
+
+
+def test_combos_csv_is_written_and_capped_by_limit(tmp_path):
+    result = seasonal_result()
+    written = report.write_all(result, tmp_path, stamp="fixed")
+    rows = list(csv.DictReader(written["combos"].open()))
+    assert len(rows) == 22
+    assert rows[0]["code"] == "LDH" and rows[0]["depart"] == "2027-04-15"
+    assert len(report.best_combinations(result, limit=5)) == 5

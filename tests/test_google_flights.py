@@ -127,3 +127,53 @@ def test_search_url_round_trip_is_wellformed():
     url = GoogleFlightsProvider().search_url(REQUEST)
     assert url.startswith("https://www.google.com/travel/flights/search?tfs=")
     assert "curr=AUD" in url
+
+
+# -- payload extraction ------------------------------------------------------
+def wrap(payload_json: str, *, tail: str = ", sideChannel: {}") -> str:
+    return (
+        '<html><body><script class="ds:1">'
+        'AF_initDataCallback({key: "ds:1", hash: "1", data:' + payload_json + tail + "});"
+        "</script></body></html>"
+    )
+
+
+def one_result_payload():
+    seg = segment("BNE", "SIN", (2026, 12, 20), [9, 0], 480)
+    return json.dumps([None, None, [[]], [[entry(1200, ["SQ"], [seg])]],
+                       None, None, None, [None, [[], []]]])
+
+
+def test_payload_extraction_survives_a_missing_trailing_argument():
+    """The tail after the array varies between responses; it must not matter."""
+    for tail in (", sideChannel: {}", "", ", sideChannel: {}, extra: [1,2]"):
+        assert len(parse(wrap(one_result_payload(), tail=tail))) == 1
+
+
+def test_payload_extraction_ignores_brackets_inside_strings():
+    seg = segment("BNE", "SIN", (2026, 12, 20), [9, 0], 480)
+    seg[4] = 'Brisbane [BNE], "the" }]} airport'
+    payload = json.dumps(
+        [None, None, [[]], [[entry(1200, ["SQ"], [seg])]], None, None, None, [None, [[], []]]]
+    )
+    (it,) = parse(wrap(payload))
+    assert it.price == 1200.0
+
+
+def test_explicit_error_marker_is_reported_as_no_flights():
+    html = (
+        '<html><body><script class="ds:1">'
+        'AF_initDataCallback({key: "ds:1", data:[], errorHasStatus: true});'
+        "</script></body></html>"
+    )
+    with pytest.raises(NoFlightsFound):
+        parse(html)
+
+
+def test_truncated_payload_is_an_error_not_a_silent_empty():
+    html = (
+        '<html><body><script class="ds:1">'
+        "AF_initDataCallback({data:[1, [2,</script></body></html>"
+    )
+    with pytest.raises(ProviderError, match="unterminated"):
+        parse(html)
