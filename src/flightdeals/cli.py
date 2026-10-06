@@ -67,6 +67,11 @@ def _add_window_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--months", type=int, default=12, help="with --window monthly: how many months")
     p.add_argument("--nights", type=int, default=7, help="with --window monthly: trip length")
     p.add_argument("--day", type=int, default=15, help="with --window monthly: day of month")
+    p.add_argument(
+        "--start",
+        help="with --window monthly: first month as YYYY-MM (default: next month). "
+        "Lets a later stretch be filled in without re-pricing months already scanned.",
+    )
     p.add_argument("--one-way", action="store_true", help="price one-way instead of return")
 
 
@@ -210,7 +215,16 @@ def windows_from_args(args) -> list[Window]:
             )
         return [Window(args.depart, ret, name="custom")]
     if args.window == "monthly":
-        return windows.monthly(months=args.months, nights=args.nights, day=args.day)
+        start = None
+        if args.start:
+            try:
+                year, month = (int(part) for part in args.start.split("-"))
+                start = date(year, month, 1)
+            except ValueError:
+                raise SystemExit(f"--start expects YYYY-MM, got {args.start!r}") from None
+        return windows.monthly(
+            start=start, months=args.months, nights=args.nights, day=args.day
+        )
     if args.window == "custom":
         raise SystemExit("--window custom needs --depart (and usually --return)")
     picked = windows.preset(args.window, args.year)

@@ -52,3 +52,12 @@ def test_around_can_sample_at_a_coarse_step():
 def test_around_step_larger_than_flex_yields_only_the_base_window():
     flex = windows.around(date(2026, 12, 17), date(2026, 12, 27), flex_days=2, step=5)
     assert [w.name for w in flex] == ["-2d"]
+
+
+def test_monthly_honours_an_explicit_start():
+    """Filling in a later stretch must not re-price the months already scanned."""
+    sweep = windows.monthly(start=date(2027, 5, 1), months=6, nights=10)
+    assert [w.name for w in sweep] == [
+        "2027-05", "2027-06", "2027-07", "2027-08", "2027-09", "2027-10"
+    ]
+    assert sweep[0].depart == date(2027, 5, 15)
