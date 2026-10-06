@@ -7,7 +7,7 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-from . import __version__, catalog, profile, providers, radar, report, windows
+from . import __version__, catalog, feeds, profile, providers, radar, report, windows
 from .history import PriceHistory
 from .providers.base import SearchRequest
 from .scanner import RateLimiter, ScanSpec, Window, scan
@@ -168,6 +168,16 @@ def build_parser() -> argparse.ArgumentParser:
     hist_p.add_argument("--origin", default="BNE")
     hist_p.add_argument("--dest", help="show the price series for one destination")
     hist_p.add_argument("--window", default="", help="window label, e.g. 2026-12-20/2027-01-04")
+
+    sale_p = sub.add_parser(
+        "sales",
+        help="published airline sale posts for your origin — announcements, not measurements",
+    )
+    sale_p.add_argument("--origin", default="BNE")
+    sale_p.add_argument("--limit", type=int, default=20)
+    sale_p.add_argument(
+        "--priced-only", action="store_true", help="only posts quoting a price for your origin"
+    )
 
     url_p = sub.add_parser("url", help="print the Google Flights URL for one search")
     url_p.add_argument("origin")
@@ -436,6 +446,42 @@ def cmd_history(args) -> int:
     return 0
 
 
+def cmd_sales(args) -> int:
+    """List current airfare sale posts.
+
+    Kept separate from `scan` deliberately: a sale is an announcement, not a
+    measurement. It explains why a fare moved; it does not establish that one is
+    cheap now, and it is often gone by the time it is read.
+    """
+    try:
+        deals = feeds.fetch_airfare_deals(origin=args.origin.upper())
+    except Exception as exc:
+        print(f"could not read the deal feed: {exc}", file=sys.stderr)
+        return 1
+
+    if args.priced_only:
+        deals = [d for d in deals if d.origin_price is not None]
+    deals = [d for d in deals if not d.is_expired]
+    deals.sort(key=lambda d: (d.origin_price is None, d.origin_price or 0, -(d.votes or 0)))
+
+    if not deals:
+        print("no current airfare posts matched", file=sys.stderr)
+        return 0
+
+    print(f"{len(deals)} current airfare post(s), {args.origin.upper()} prices where quoted\n")
+    for deal in deals[: args.limit]:
+        price = f"{deal.origin_price:,.0f}" if deal.origin_price is not None else "-"
+        votes = f"{deal.votes}v" if deal.votes is not None else ""
+        print(f"  {price:>8}  {votes:>5}  {deal.title}")
+        print(f"            {deal.url}")
+    print(
+        "\nThese are announcements, not measurements: date-restricted, capacity-limited, "
+        "and often expired. Verify with `flightdeals url` before believing one.",
+        file=sys.stderr,
+    )
+    return 0
+
+
 def cmd_url(args) -> int:
     provider = providers.build("google-flights")
     print(
@@ -458,6 +504,7 @@ COMMANDS = {
     "destinations": cmd_destinations,
     "profile": cmd_profile,
     "history": cmd_history,
+    "sales": cmd_sales,
     "url": cmd_url,
 }
 

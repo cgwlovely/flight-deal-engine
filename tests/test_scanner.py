@@ -171,3 +171,21 @@ def test_a_provider_without_insights_still_works():
     result = scan(spec(["SIN"], windows=WINDOWS[:1]), FakeProvider({"SIN": 1200}), limiter=NO_WAIT)
     (deal,) = result.deals_by_window[WINDOWS[0].label]
     assert deal.quote.insight is None
+
+
+def test_a_carrier_filtered_scan_is_not_recorded_in_history(tmp_path):
+    """Filtered prices are not comparable with open-market ones; mixing them would
+    inflate every baseline computed from the database afterwards."""
+    db = tmp_path / "h.db"
+    with PriceHistory(db) as hist:
+        scan(
+            ScanSpec(origin="BNE", destinations=["SIN"], windows=WINDOWS[:1], airlines=("CZ",)),
+            FakeProvider({"SIN": 1800}),
+            history=hist,
+            limiter=NO_WAIT,
+        )
+        assert hist.prices("BNE", "SIN", window_label=WINDOWS[0].label) == []
+
+        scan(spec(["SIN"], windows=WINDOWS[:1]), FakeProvider({"SIN": 1200}),
+             history=hist, limiter=NO_WAIT)
+        assert hist.prices("BNE", "SIN", window_label=WINDOWS[0].label) == [1200.0]

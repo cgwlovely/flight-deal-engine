@@ -66,6 +66,9 @@ flightdeals destinations --origin BNE --region Europe
 # Price history for one route, once you've scanned it more than once
 flightdeals history --dest NRT --window 2026-12-20/2027-01-04
 
+# Published airline sale posts for your origin (announcements, not measurements)
+flightdeals sales --origin BNE --priced-only
+
 # Just hand me the Google Flights link
 flightdeals url BNE SIN 2026-12-20 2027-01-04
 ```
@@ -168,6 +171,26 @@ repeatedly. A daily cron is enough:
 ```
 
 All observations land in `~/.flight-deal-engine/history.db`.
+
+## Sales are not fares
+
+`flightdeals sales` reads the airfare posts from OzBargain's published travel feed —
+one request per run, from the RSS the site publishes for syndication, not scraped
+pages. It is deliberately a separate command from `scan`, because a sale and a cheap
+fare are different objects:
+
+- A **scan** prices a route on a date and can say whether that fare is unusual.
+- A **sale** is an announcement — date-restricted, capacity-limited, often expired by
+  the time it is read. It explains why a fare moved; it does not establish that one
+  is cheap now.
+
+They are worth having side by side because neither sees the other. Measured
+2026-10-06: a published China Southern sale had Brisbane–London at A$1,320 while the
+deepest fare this engine found by scanning was A$1,683 — scanning the 15th of each
+month cannot see a fare that only exists on particular dates. The same comparison ran
+the other way for Tokyo, where scanning found A$881 against the sale's A$907.
+
+A filtered scan is never recorded in the price history, for the reason below.
 
 ## Do not use `--airlines` to compare prices
 

@@ -231,7 +231,12 @@ def scan(
             if on_result is not None:
                 on_result(request, quote, error)
 
-    if history is not None:
+    # A carrier-filtered scan must not be recorded. Filtering narrows the fares on
+    # offer as well as the carriers, so its prices are systematically higher than an
+    # open-market scan of the same route (measured: A$1,390 unfiltered against
+    # A$1,767 filtered, same itinerary, same minute). Mixed into one baseline they
+    # inflate the median and make a later genuine fare look unremarkable.
+    if history is not None and not spec.airlines:
         for window in spec.windows:
             history.record(
                 [q.cheapest for q in quotes[window.label]], window_label=window.label
