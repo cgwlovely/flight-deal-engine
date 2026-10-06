@@ -49,6 +49,11 @@ flightdeals scan --depart 2027-04-02 --return 2027-04-14 --flex 3
 # When is this route cheap? One fixed-length trip per month for a year
 flightdeals scan --dest LDH --window monthly --months 12 --nights 7
 
+# What is one carrier group worth? Run the same scan twice and subtract
+flightdeals scan --dest FCO,BCN,AMS --window monthly --months 6 --out out/open
+flightdeals scan --dest FCO,BCN,AMS --window monthly --months 6 --out out/cn \
+  --airlines CA,CZ,MU,HU,MF
+
 # What's in the catalogue, and how far away is it
 flightdeals destinations --origin BNE --region Europe
 
@@ -78,6 +83,7 @@ terminal switches to the same pivoted view automatically.
 | `--region`, `--dest`, `--exclude`, `--all` | Scope the destination list |
 | `--seat`, `--adults`, `--children`, `--currency` | Search parameters |
 | `--max-stops 0` | Nonstop only |
+| `--airlines CZ,MU,CA` | Only these marketing carriers |
 | `--workers`, `--min-interval`, `--attempts` | Throughput vs. politeness |
 | `--no-history`, `--db PATH` | Where (or whether) to record prices |
 

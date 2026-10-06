@@ -70,6 +70,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     scan_p.add_argument("--currency", default="AUD")
     scan_p.add_argument("--max-stops", type=int, default=None)
+    scan_p.add_argument(
+        "--airlines",
+        type=_csv_list,
+        help="only these marketing carriers, e.g. CZ,MU,CA — use twice-run scans "
+        "to measure what one carrier group is worth against the open market",
+    )
     scan_p.add_argument("--one-way", action="store_true", help="price one-way instead of return")
     scan_p.add_argument("--workers", type=int, default=4, help="concurrent requests (default 4)")
     scan_p.add_argument(
@@ -145,6 +151,7 @@ def cmd_scan(args) -> int:
         seat=args.seat,
         currency=args.currency,
         max_stops=args.max_stops,
+        airlines=tuple(c.upper() for c in (args.airlines or ())),
     )
 
     total = len(destinations) * len(window_list)

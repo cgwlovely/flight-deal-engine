@@ -177,3 +177,25 @@ def test_truncated_payload_is_an_error_not_a_silent_empty():
     )
     with pytest.raises(ProviderError, match="unterminated"):
         parse(html)
+
+
+def test_airline_filter_changes_the_query_and_is_absent_by_default():
+    base = GoogleFlightsProvider().search_url(REQUEST)
+    filtered = GoogleFlightsProvider().search_url(
+        SearchRequest(
+            origin="BNE",
+            destination="FRA",
+            depart_date=date(2027, 2, 15),
+            return_date=date(2027, 3, 8),
+            currency="AUD",
+            airlines=("CZ", "MU"),
+        )
+    )
+    assert base != filtered
+    # The codes are carried in the protobuf, so they survive into the encoded query.
+    import base64
+    from urllib.parse import unquote
+
+    raw = base64.b64decode(unquote(filtered.split("tfs=")[1].split("&")[0]))
+    assert b"CZ" in raw and b"MU" in raw
+    assert b"CZ" not in base64.b64decode(unquote(base.split("tfs=")[1].split("&")[0]))

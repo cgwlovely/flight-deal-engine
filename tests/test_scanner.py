@@ -124,3 +124,31 @@ def test_rate_limiter_spaces_requests():
     for _ in range(4):
         limiter.wait()
     assert time.monotonic() - start >= 0.1
+
+
+def test_airline_filter_reaches_every_request():
+    spec = ScanSpec(
+        origin="BNE",
+        destinations=["FRA", "AMS"],
+        windows=WINDOWS[:1],
+        airlines=("CZ", "MU"),
+    )
+    seen = []
+
+    class Recorder:
+        name = "fake"
+
+        def search(self, request):
+            seen.append(request.airlines)
+            raise NoFlightsFound("none")
+
+    scan(spec, Recorder(), limiter=NO_WAIT)
+    assert seen == [("CZ", "MU")] * 2
+
+
+def test_airline_filter_shows_up_in_the_failure_label():
+    spec = ScanSpec(
+        origin="BNE", destinations=["FRA"], windows=WINDOWS[:1], airlines=("CZ",)
+    )
+    result = scan(spec, FakeProvider({}), limiter=NO_WAIT)
+    assert "[CZ]" in result.failures[0].request.label()

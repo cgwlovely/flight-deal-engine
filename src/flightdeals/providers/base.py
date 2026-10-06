@@ -29,6 +29,8 @@ class SearchRequest:
     currency: str = "AUD"
     max_stops: int | None = None
     max_duration_minutes: int | None = None
+    airlines: tuple[str, ...] = ()
+    """Restrict results to these marketing carriers (IATA codes). Empty = no filter."""
 
     @property
     def trip(self) -> str:
@@ -36,7 +38,8 @@ class SearchRequest:
 
     def label(self) -> str:
         tail = f" -> {self.return_date}" if self.return_date else ""
-        return f"{self.origin}-{self.destination} {self.depart_date}{tail}"
+        carriers = f" [{'/'.join(self.airlines)}]" if self.airlines else ""
+        return f"{self.origin}-{self.destination} {self.depart_date}{tail}{carriers}"
 
 
 @runtime_checkable

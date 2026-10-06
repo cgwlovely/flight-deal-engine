@@ -74,6 +74,7 @@ class ScanSpec:
     currency: str = "AUD"
     max_stops: int | None = None
     max_duration_minutes: int | None = None
+    airlines: tuple[str, ...] = ()
 
     def requests(self) -> list[tuple[Window, SearchRequest]]:
         out = []
@@ -93,6 +94,7 @@ class ScanSpec:
                             currency=self.currency,
                             max_stops=self.max_stops,
                             max_duration_minutes=self.max_duration_minutes,
+                            airlines=self.airlines,
                         ),
                     )
                 )

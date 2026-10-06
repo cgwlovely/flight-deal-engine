@@ -116,6 +116,7 @@ class GoogleFlightsProvider:
                 to_airport=request.destination,
                 max_stops=request.max_stops,
                 max_duration_minutes=request.max_duration_minutes,
+                airlines=list(request.airlines) or None,
             )
         ]
         if request.return_date:
@@ -126,6 +127,7 @@ class GoogleFlightsProvider:
                     to_airport=request.origin,
                     max_stops=request.max_stops,
                     max_duration_minutes=request.max_duration_minutes,
+                    airlines=list(request.airlines) or None,
                 )
             )
         return create_query(
