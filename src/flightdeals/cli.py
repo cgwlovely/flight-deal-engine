@@ -217,13 +217,22 @@ def select_destinations(args) -> list:
 
 
 def windows_from_args(args) -> list[Window]:
+    picked = _window_shape(args)
+    # --one-way applies to every way of choosing windows, not just presets. It used
+    # to be handled per-branch and the monthly branch silently ignored it, so a
+    # one-way monthly sweep returned round-trip prices.
+    if args.one_way:
+        picked = [Window(w.depart, None, name=w.name) for w in picked]
+    return picked
+
+
+def _window_shape(args) -> list[Window]:
     if args.depart:
-        ret = None if args.one_way else args.ret
         if args.flex:
             return windows.around(
-                args.depart, ret, flex_days=args.flex, step=args.flex_step
+                args.depart, args.ret, flex_days=args.flex, step=args.flex_step
             )
-        return [Window(args.depart, ret, name="custom")]
+        return [Window(args.depart, args.ret, name="custom")]
     if args.window == "monthly":
         start = None
         if args.start:
@@ -237,10 +246,7 @@ def windows_from_args(args) -> list[Window]:
         )
     if args.window == "custom":
         raise SystemExit("--window custom needs --depart (and usually --return)")
-    picked = windows.preset(args.window, args.year)
-    if args.one_way:
-        picked = [Window(w.depart, None, name=w.name) for w in picked]
-    return picked
+    return windows.preset(args.window, args.year)
 
 
 def build_spec(args, destinations: list, window_list: list[Window]) -> ScanSpec:
