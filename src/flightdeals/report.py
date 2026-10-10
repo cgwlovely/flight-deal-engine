@@ -61,6 +61,16 @@ def _rows(deals: list[Deal]) -> list[dict]:
                     round(deal.discount_pct, 1) if deal.discount_pct is not None else ""
                 ),
                 "observations": deal.observations,
+                # The source's verdict against its own price history. It belongs in
+                # every output, not just the combos file: a single-window scan has no
+                # combos file at all, and that is exactly when the verdict is the only
+                # baseline available.
+                "vs_history": deal.quote.insight.level if deal.quote.insight else "",
+                "vs_usual": (
+                    deal.quote.insight.delta_vs_usual
+                    if deal.quote.insight and deal.quote.insight.delta_vs_usual is not None
+                    else ""
+                ),
                 "notes": "; ".join(deal.notes),
             }
         )

@@ -349,3 +349,48 @@ def test_median_needs_three_windows_before_a_discount_is_claimed():
 def test_unknown_ordering_is_rejected():
     with pytest.raises(ValueError, match="unknown ordering"):
         report.best_combinations(seasonal_result(), by="vibes")
+
+
+class InsightfulProvider:
+    """A source that publishes a verdict against its own price history."""
+
+    name = "fake"
+
+    def search_with_insight(self, request):
+        from flightdeals.models import PriceInsight
+
+        return self.search(request), PriceInsight(level="low", delta_vs_usual=-94.0)
+
+    def search(self, request):
+        return [
+            Itinerary(
+                origin=request.origin,
+                destination=request.destination,
+                depart_date=request.depart_date,
+                return_date=request.return_date,
+                price=1200,
+                currency="AUD",
+                legs=[Leg(request.origin, request.destination, None, None, 470)],
+                source="fake",
+            )
+        ]
+
+
+def test_the_history_verdict_reaches_every_output_not_just_combos(tmp_path):
+    """A single-window scan writes no combos file, and that is exactly when the
+    verdict is the only baseline there is."""
+    result = scan(
+        ScanSpec(origin="BNE", destinations=["SIN"], windows=[WINDOW]),
+        InsightfulProvider(),
+        limiter=RateLimiter(min_interval=0, jitter=0),
+    )
+    written = report.write_all(result, tmp_path, stamp="fixed")
+    assert "combos" not in written, "single window: no combos file"
+
+    payload = json.loads(written["json"].read_text())
+    (row,) = payload["windows"][0]["deals"]
+    assert row["vs_history"] == "low"
+    assert row["vs_usual"] == -94.0
+
+    (csv_row,) = list(csv.DictReader(written["csv"].open()))
+    assert csv_row["vs_history"] == "low"
